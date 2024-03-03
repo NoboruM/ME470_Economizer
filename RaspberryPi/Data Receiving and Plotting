@@ -1,0 +1,49 @@
+# Remember to install matplotlib with "pip install matplotlib"
+
+import serial
+import matplotlib.pyplot as plt
+
+# Initialize serial connection (change port and baudrate as needed)
+ser = serial.Serial('/dev/ttyUSB0', 9600)
+
+# Initialize lists to store data points
+oat_data = []
+mat_data = []
+
+# Create a plot
+plt.figure()
+plt.title('2D Data Plot')
+plt.xlabel('Outside Air Temperature (F)')
+plt.ylabel('Mixed Air Temperature (F)')
+
+# Create a scatter plot
+plot = plt.scatter([], [])
+
+# Function to update plot with new data
+def update_plot():
+    plot.set_offsets(zip(x_data, y_data))
+    plt.draw()
+
+# Main loop to receive and plot data
+try:
+    while True:
+        # Read data from serial port
+        data = ser.readline().decode().strip()
+        
+        # Split the received data into x and y values
+        x, y = map(float, data.split(','))
+        
+        # Append data points to lists
+        x_data.append(x)
+        y_data.append(y)
+        
+        # Update the plot
+        update_plot()
+except KeyboardInterrupt:
+    print("Plotting stopped by user")
+
+# Close serial connection
+ser.close()
+
+# Show the plot
+plt.show()
