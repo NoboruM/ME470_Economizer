@@ -4,7 +4,7 @@ import serial
 import matplotlib.pyplot as plt
 
 # Initialize serial connection (change port and baudrate as needed)
-ser = serial.Serial('/dev/ttyUSB0', 9600)
+ser = serial.Serial('/dev/ttyUSB2', 9600)
 
 # Initialize lists to store data points
 oat_data = []
