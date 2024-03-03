@@ -25,6 +25,10 @@ def update_plot():
     plt.draw()
 
 # Main loop to receive and plot data
+# Need to modify if we are including time in our analysis
+# raw data should be in the format:
+# [oat1], [mat1]
+# [oat2], [mat2]
 try:
     while True:
         # Read data from serial port
