@@ -37,8 +37,6 @@ for o, m in zip(oat, minimum_oa_mat):
     actual_mat = np.append(actual_mat, ideal_mat)
   elif (o < m):
       actual_mat = np.append(actual_mat, o)
-  else:
-    actual_mat = np.append(actual_mat, m)
 
 # Plot the curve
 plot_curve(oat, actual_mat)
