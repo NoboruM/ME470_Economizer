@@ -12,7 +12,7 @@ mat_data = []
 
 # Create a plot
 plt.figure()
-plt.title('2D Data Plot')
+plt.title('Data Points Againt Ideal Economizer Curve')
 plt.xlabel('Outside Air Temperature (F)')
 plt.ylabel('Mixed Air Temperature (F)')
 
@@ -21,7 +21,7 @@ plot = plt.scatter([], [])
 
 # Function to update plot with new data
 def update_plot():
-    plot.set_offsets(zip(x_data, y_data))
+    plot.set_offsets(zip(oat_data, mat_data))
     plt.draw()
 
 # Main loop to receive and plot data
@@ -31,11 +31,11 @@ try:
         data = ser.readline().decode().strip()
         
         # Split the received data into x and y values
-        x, y = map(float, data.split(','))
+        oat, mat = map(float, data.split(','))
         
         # Append data points to lists
-        x_data.append(x)
-        y_data.append(y)
+        oat_data.append(oat)
+        mat_data.append(mat)
         
         # Update the plot
         update_plot()
