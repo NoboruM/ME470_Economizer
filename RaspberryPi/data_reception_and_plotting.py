@@ -24,11 +24,12 @@ def update_plot():
     plot.set_offsets(zip(oat_data, mat_data))
     plt.draw()
 
-# Main loop to receive and plot data
 # Need to modify if we are including time in our analysis
 # raw data should be in the format:
 # [oat1], [mat1]
 # [oat2], [mat2]
+
+# Main loop to receive and plot data
 try:
     while True:
         # Read data from serial port
