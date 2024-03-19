@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Curently not being used
 def plot_curve(x_data, y_data):
     # Create a plot
     plt.figure()
@@ -16,8 +17,16 @@ def plot_curve(x_data, y_data):
 
     # Show the plot
     plt.show()
+    return plt.gca();
 
-def plot_curve_w_user_inputs(minimum_percent_outside_air, return_air_temp, low_lockout_temp, high_lockout_temp, ideal_mat):
+# Plots a data set onto an existing plot; for overlaying two plots together
+def plot_curve_on_exisiting_plot(plot, x_data, y_data):
+    plot.scatter(x_data, y_data, alpha=0)
+    plot.plot(x_data, y_data, color='blue')
+    return plot.gca()
+
+# Plots ideal economizer curve onto an existing plot given parameters
+def plot_curve_w_user_inputs_and_raw_data(graphed_raw_data, minimum_percent_outside_air, return_air_temp, low_lockout_temp, high_lockout_temp, ideal_mat):
     # parameters; change to user inputs
     # minimum_percent_outside_air = 0.2
     # return_air_temp = 72
@@ -38,13 +47,6 @@ def plot_curve_w_user_inputs(minimum_percent_outside_air, return_air_temp, low_l
           actual_mat = np.append(actual_mat, o)
     
     # Plot the curve
-    plot_curve(oat, actual_mat)
-
-# Recieve Parameters from User
-minimum_percent_outside_air = input("Enter Minimum Percent Outside Air:")
-return_air_temp = input("Enter Return Air Temperature in Farenheit:")
-low_lockout_temp = input("Enter Low Lockout Temperature in Farenheit")
-high_lockout_temp = input("Enter High Lockout Temperature in Farenheit")
-ideal_mat = input("Enter Ideal Mixed Air Temperature in Farenheit")
-
-plot_curve_w_user_inputs(minimum_percent_outside_air, return_air_temp, low_lockout_temp, high_lockout_temp, ideal_mat)
+    plot = plot_curve_on_exisiting_plot(graphed_raw_data, oat, actual_mat)
+    plot.show()
+    # return plot
