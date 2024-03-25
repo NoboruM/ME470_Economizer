@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 # Curently not being used
 def plot_curve(x_data, y_data):
