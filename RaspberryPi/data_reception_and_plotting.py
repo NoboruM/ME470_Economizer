@@ -46,7 +46,7 @@ def data_reception_and_graphing():
             mat_data.append(float(mat))
             date_data.append(date)
             time_data.append(time)
-            motor_data.append(bool(motor))w
+            motor_data.append(bool(motor))
             
             # # Update the plot
             update_plot()
@@ -61,6 +61,7 @@ def data_reception_and_graphing():
 
 # Recieve Parameters from User
 def main():
+    print("hi?")
     minimum_percent_outside_air = int(input("Enter Minimum Percent Outside Air:"))
     return_air_temp = input("Enter Return Air Temperature in Farenheit:")
     low_lockout_temp = input("Enter Low Lockout Temperature in Farenheit")
@@ -72,3 +73,6 @@ def main():
 
     # overlays the ideal economizer curve generated from user inputs onto graphed_raw_data; outputs the finalized graph
     plot_curve_w_user_inputs_and_raw_data(graphed_raw_data, minimum_percent_outside_air, return_air_temp, low_lockout_temp, high_lockout_temp, ideal_mat)
+
+if __name__ == "__name__":
+    main()
