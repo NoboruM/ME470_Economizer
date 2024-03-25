@@ -64,7 +64,7 @@ def PlotIdealCurve(min_outside_air, rat, low_lockout_temp, high_lockout_temp, id
     else:
         MAT[i] = oat[i]
   rand_data = GenerateRandomData(oat, MAT)
-  plt.rcParams.update({'font.size': 30})
+  plt.rcParams.update({'font.size': 12})
   plt.figure()
   plt.plot(oat, MAT)
   plt.scatter(rand_data[:,0], rand_data[:,1], color = "green")
