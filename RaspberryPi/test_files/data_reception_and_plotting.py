@@ -2,7 +2,7 @@
 
 import serial
 import matplotlib.pyplot as plt
-import ideal_economizer_curve_generation
+import RaspberryPi.test_files.ideal_economizer_curve_generation as ideal_economizer_curve_generation
 
 def data_reception_and_graphing():
     # Initialize serial connection (change port and baudrate as needed)
