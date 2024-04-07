@@ -1,3 +1,4 @@
+
 import tkinter
 import customtkinter as ctk
 from functools import partial
@@ -5,6 +6,7 @@ import os
 import serial
 from csv import writer as CsvWriter
 from CTkPopupKeyboard import PopupKeyboard, PopupNumpad
+from PIL import Image
 
 DARK_MODE = "dark"
 ctk.set_appearance_mode(DARK_MODE)
@@ -47,7 +49,7 @@ class App(ctk.CTk):
         self.create_download_frame("download")
         
         # set the initial frame to display  
-        App.current = App.frames["input"]
+        App.current = App.frames["home"]
         App.current.pack(in_=self.main_container, side=tkinter.TOP, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
 
     def create_input_frame(self, frame_id):
@@ -159,7 +161,7 @@ class App(ctk.CTk):
 
         self.save_exit_button = ctk.CTkButton(App.frames[frame_id], text="Save & Exit", command=self.handle_install_inputs, corner_radius=100)
         self.save_exit_button.grid(row=10, column=4, padx=20, pady=20, sticky="ew")
-        self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=partial(self.toggle_frame_by_id, "download"), text="Cancel")
+        self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=partial(self.toggle_frame_by_id, "home"), text="Cancel")
         self.cancel_button.grid(row=10, column=5, padx=20, pady=20, sticky="ew")
 
     def handle_install_inputs(self):
@@ -230,13 +232,13 @@ class App(ctk.CTk):
         image1 = ctk.CTkLabel(App.frames[frame_id], text="", image=home_icon)
         image1.grid(row=0, column=1, padx=20, pady=20, sticky="e")
     
-        button1 = ctk.CTkButton(App.frames[frame_id], text="Installation: Set Parameters for New System")
-        button1.grid(row=1, column=0, padx=20, pady=20, sticky="w", command=partial(self.toggle_frame_by_id, "input"))
+        button1 = ctk.CTkButton(App.frames[frame_id], text="Installation: Set Parameters for New System",  command=partial(self.toggle_frame_by_id, "input"))
+        button1.grid(row=1, column=0, padx=20, pady=20, sticky="w")
     
         button2 = ctk.CTkButton(App.frames[frame_id], text="View Downloaded Data")
         button2.grid(row=2, column=0, padx=20, pady=20, sticky="w")
     
-        button3 = ctk.CTkButton(App.frames[frame_id], text="Download Data")
+        button3 = ctk.CTkButton(App.frames[frame_id], text="Download Data",  command=partial(self.toggle_frame_by_id, "download"))
         button3.grid(row=3, column=0, padx=20, pady=20, sticky="w")
     
         button4 = ctk.CTkButton(App.frames[frame_id], text="Back")
