@@ -216,12 +216,31 @@ class App(ctk.CTk):
             
         
     def create_home_frame(self, frame_id):
-        App.frames[frame_id] = ctk.CTkFrame(self.main_container, corner_radius=8, fg_color="#323232")
-
-        test_button = ctk.CTkButton(App.frames[frame_id], text=str(frame_id),command=partial(self.toggle_frame_by_id, "input"), corner_radius=8)
-        test_button.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
-        # App.current = App.frames[frame_id]
-        # App.current.pack(in_=self.main_container, side=tkinter.TOP, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
+        App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
+        self.title("Home")
+    
+        # configure the grid, but doesn't set size. I think if you keep adding stuff it works
+        App.frames[frame_id].grid_columnconfigure((0, 1), weight=1)
+        App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5), weight=1)
+    
+        home_label = ctk.CTkLabel(App.frames[frame_id], text="Home", font=("Arial", 25))
+        home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+    
+        home_icon = ctk.CTkImage(light_image=Image.open('home_icon2.png'), dark_image=Image.open('home_icon2.png'), size=(50, 50))
+        image1 = ctk.CTkLabel(App.frames[frame_id], text="", image=home_icon)
+        image1.grid(row=0, column=1, padx=20, pady=20, sticky="e")
+    
+        button1 = ctk.CTkButton(App.frames[frame_id], text="Installation: Set Parameters for New System")
+        button1.grid(row=1, column=0, padx=20, pady=20, sticky="w", command=partial(self.toggle_frame_by_id, "input"))
+    
+        button2 = ctk.CTkButton(App.frames[frame_id], text="View Downloaded Data")
+        button2.grid(row=2, column=0, padx=20, pady=20, sticky="w")
+    
+        button3 = ctk.CTkButton(App.frames[frame_id], text="Download Data")
+        button3.grid(row=3, column=0, padx=20, pady=20, sticky="w")
+    
+        button4 = ctk.CTkButton(App.frames[frame_id], text="Back")
+        button4.grid(row=5, column=1, padx=20, pady=20, sticky="e")
 
     def create_download_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
