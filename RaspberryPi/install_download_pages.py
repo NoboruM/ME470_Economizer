@@ -7,14 +7,80 @@ import serial
 from csv import writer as CsvWriter
 from CTkPopupKeyboard import PopupKeyboard, PopupNumpad
 from PIL import Image
+from time import strftime, localtime, time
+import datetime
+import calendar
+import pytz
 
 DARK_MODE = "dark"
 ctk.set_appearance_mode(DARK_MODE)
 ctk.set_default_color_theme("blue")
 
+def CustomSerial(message, baud_rate):
+    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
+    ser.write(b"message\r\n")
+    start_time = time()
+    response = ser.readline().decode().strip()
+    while (time() - start_time) < 6 or response == "":
+        ser.write(b"message\r\n")
+        response = ser.readline().decode().strip()
+    ser.close()
+    return response
+
+
+def CustomSerialContinuous(message, baud_rate):
+    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
+    ser.write(b"message\r\n")
+    start_time = time()
+    response = ser.readline().decode().strip()
+    oat_data = []
+    mat_data = []
+    date_data = []
+    motor_data = []
+    while (time() - start_time) < 6 or response == "":
+        # ser.write(b"message\r\n") # shouldn't need this
+        response = ser.readline().decode().strip()
+        if (len(response.split(',')) < 4):
+            print("not enough data: ", data)
+            continue
+        date, OAT, MAT, Motor_state = response.split(',')
+        oat_data.append(float(oat[:-2]))
+        mat_data.append(float(mat))
+        date_data.append(date)
+        motor_data.append(bool(motor))
+
+        start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
+
+    ser.close()
+    return date_data, oat_data, mat_data, motor_data
+
+# def CustomFileRead(message, baud_rate):
+#     response = /s
+#     start_time = time()
+#     oat_data = []
+#     mat_data = []
+#     date_data = []
+#     motor_data = []
+#     while (time() - start_time) < 6 or response == "":
+#         # ser.write(b"message\r\n") # shouldn't need this
+#         response = ser.readline().decode().strip()
+#         if (len(response.split(',')) < 4):
+#             print("not enough data: ", data)
+#             continue
+#         date, OAT, MAT, Motor_state = response.split(',')
+#         oat_data.append(float(oat[:-2]))
+#         mat_data.append(float(mat))
+#         date_data.append(date)
+#         motor_data.append(bool(motor))
+
+#         start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
+
+#     return date_data, oat_data, mat_data, motor_data
+
+
 class ToplevelWindow(ctk.CTkToplevel):
     def __init__(self, title_, text_,*args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.geometry("400x300")
         self.title(title_)
         self.grid_rowconfigure((0, 1), weight=1)
@@ -27,12 +93,11 @@ class App(ctk.CTk):
     frames = {}
     current = None
     bg = ""
-
-
     def __init__(self):
         super().__init__()
         self.bg = self.cget("fg_color")
         self.num_of_frames = 0
+
         # self.state('withdraw')
         self.title("Change Frames")
 
@@ -59,7 +124,7 @@ class App(ctk.CTk):
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
    
         # configure the grid, but doesn't set size. I think if you keep adding stuff it works
-        App.frames[frame_id].grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        App.frames[frame_id].grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
         # first row is the system name, which has text and user input ->  2 columns
@@ -148,11 +213,18 @@ class App(ctk.CTk):
 
         date_label = ctk.CTkLabel(App.frames[frame_id], text="Date:")
         date_label.grid(row=9, column=1,padx=10, pady=10, sticky="e")
-        self.date_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
-        self.date_input.grid(row=9, column=2, columnspan=3, padx=10, pady=10, sticky="ew")
-        date_unit_label = ctk.CTkLabel(App.frames[frame_id], text = "min")
+        self.month_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
+        self.month_input.grid(row=9, column=2, columnspan=1, padx=10, pady=10, sticky="ew")
+        self.day_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
+        self.day_input.grid(row=9, column=3, columnspan=1, padx=10, pady=10, sticky="ew")
+        self.year_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
+        self.year_input.grid(row=9, column=4, columnspan=1, padx=10, pady=10, sticky="ew")
+        date_unit_label = ctk.CTkLabel(App.frames[frame_id], text = "Month/Date/Year")
         date_unit_label.grid(row=9, column=5, padx=10, pady=10,sticky="w")
-        self.date_input.bind("<Button-1>", self.NumKeyboardCallback(self.date_input))
+
+        self.month_input.bind("<Button-1>", self.NumKeyboardCallback(self.month_input))
+        self.day_input.bind("<Button-1>", self.NumKeyboardCallback(self.day_input))
+        self.year_input.bind("<Button-1>", self.NumKeyboardCallback(self.year_input))
 
         # end is 3 buttons for going to each page
         
@@ -165,7 +237,7 @@ class App(ctk.CTk):
         self.cancel_button.grid(row=10, column=5, padx=20, pady=20, sticky="ew")
 
     def handle_install_inputs(self):
-        system_name = self.system_name_input.get()
+        self.system_name = self.system_name_input.get()
         numerical_inputs = []
         numerical_inputs.append(self.lockout_temp_input)
         numerical_inputs.append(self.min_OAT_input)
@@ -176,7 +248,9 @@ class App(ctk.CTk):
         numerical_inputs.append(self.SR_input)
         numerical_inputs.append(self.time_input1)
         numerical_inputs.append(self.time_input2)
-        numerical_inputs.append(self.date_input)
+        numerical_inputs.append(self.month_input)
+        numerical_inputs.append(self.day_input)
+        numerical_inputs.append(self.year_input)
         inputs_valid = True
         for input in numerical_inputs:
             if input.get() == "":
@@ -185,7 +259,7 @@ class App(ctk.CTk):
                 input.configure(fg_color= "#754543")
             else:
                 input.configure(fg_color= self.bg)
-
+        inputs_valid = True
         if inputs_valid:
             # clear all inputs?
             self.lockout_temp = self.lockout_temp_input.get()
@@ -198,8 +272,20 @@ class App(ctk.CTk):
 
             self.hours = self.time_input1.get()
             self.minutes = self.time_input2.get()
-            self.date = self.date_input.get()
+            self.month = self.month_input.get()
+            self.day = self.day_input.get()
+            self.year = self.year_input.get()
+            tz = pytz.timezone("US/Central")
+            date_string = datetime.datetime(int(self.year), int(self.month), int(self.day), int(self.hours), int(self.minutes)) 
+            corrected_date = tz.localize(date_string)
+            print("date: ", date_string)
+            epoch_date = calendar.timegm(corrected_date.timetuple())
+            print("epoch_date: ", epoch_date)
             
+            # send data to the arduino:
+            self.SendInstallationInputs()
+            # store in CSV file?
+            # TODO: Determine if necessary
             parameters = "M%OA," + self.min_OAT + "\nRAT," + self.RAT + "\nLLT," + self.LL_Lockout + "\nHLT," + self.HL_Lockout + "\niMAT," + self.MAT + "\nSR," + self.SR
             print(parameters)
             with open(system_name + ".csv", 'w', newline='') as new_file:
@@ -208,6 +294,20 @@ class App(ctk.CTk):
             #to do: add the date
             # at end if everything is good, move to last page
             self.toggle_frame_by_id("download")
+
+    def SendInstallationInputs(self):
+        response = CustomSerial("-p?\r\n", 9600)
+        if (response != "AOK"):
+            # TODO: give some indication of error
+            return
+        epoch_date = datetime.datetime(int(self.year), int(self.month), int(self.day), int(self.hours), int(self.minutes)) # TODO: calculate the epoch time
+        epoch_date = calendar.timegm(epoch_date.timetuple())
+        print("epoch_date: ", epoch_date )
+        response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 9600) # set the system name
+        response = CustomSerial("-t={}\r\n".format(epoch_date), 9600) # set date/time
+        response = CustomSerial("-p={},{},{},{},{}\r\n".format(self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 9600) #params in order of M%OA,RAT,LLT,HLT,iMAT
+        response = CustomSerial("-f={}\r\n".format(self.SR), 9600) # set sample rate
+        
 
     def Num_Validation(self, input): 
         if input.isdigit(): 
@@ -262,8 +362,6 @@ class App(ctk.CTk):
         self.new_download_button = ctk.CTkButton(App.frames[frame_id], text="Download New System")
         self.new_download_button.grid(row=0, column=3, padx=10, pady=10, sticky="ew")
 
-
-        
         # create scrollable frame
         self.scrollable_frame = ctk.CTkScrollableFrame(App.frames[frame_id])
         self.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 0), pady=(20, 0), sticky="nsew")
@@ -299,10 +397,20 @@ class App(ctk.CTk):
             
 
     def GetAvailableFiles(self):
-        files = os.listdir("csv_files")
-        for i in range(len(files)):
-            files[i] = files[i].split(".")[0]
-        files.sort()
+        files = []
+        try:
+            response = CustomSerial("-p?", 9600)
+            if (response != "AOK"):
+                print("unexpected response: ", response)
+                return files
+            files_response = CustomSerial("-g?", 9600)
+            # files = os.listdir("/home/eat/Documents/ME470_Economizer/EATPi Test Data")
+
+            for i in range(len(files)):
+                files[i] = files[i].split(".")[0]
+            files.sort()
+        except serial.SerialException as e:
+            print("Serial connection failed")
         return files
 
     def FileSelection(self, file_name):
@@ -332,8 +440,10 @@ class App(ctk.CTk):
         if self.selected_file is None:
             self.error_info_label.configure(text="*No File Selected", )
             return
-        print("selected " + self.scrollable_frame_files[self.selected_file].cget("text"))
+        selected_file_name = self.scrollable_frame_files[self.selected_file].cget("text")
+        print("selected " + selected_file_name)
         # set up serial communication
+
         # double check with the arduino that this system matches. if not, pop up window?
         doesnt_match = False
         if doesnt_match:
@@ -342,11 +452,14 @@ class App(ctk.CTk):
             self.continue_button.grid(row=1, column=0, padx=10, pady=10)
             self.cancel_button = ctk.CTkButton(self.toplevel_window, text="Cancel", command=self.DestroyTopLevel)
             self.cancel_button.grid(row=1, column=1, padx=10, pady=10)
-            return
+            returns
+
         self.downloading_pop_up = ToplevelWindow(self, "Loading", "")
         # tell the arduino we're ready to receive data
-        ser = serial.Serial('/dev/ttyACM0', 115200)
-        ser.write("Begin Download")
+        try:
+            response = CustomSerial("-g={}".format(selected_file_name), 9600)
+        except:
+            print("Arduino Connection error")
         # wait for response
         # get the system and parameters of the system
         system_name = ser.readline().decode().strip()
