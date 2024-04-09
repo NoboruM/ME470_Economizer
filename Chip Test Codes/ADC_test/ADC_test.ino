@@ -3,6 +3,10 @@
 ADS1115 ADS(0x48);
 
 #define R1 10000
+
+float A = 0.001595266148;
+float B = 0.0001480202732;
+float C = 0.0000004882061793;
  
 void setup() 
 {
@@ -30,9 +34,18 @@ void loop()
   float ohms_2 = R1*(Vin/Vout_2 - 1);
   float ohms_3 = R1*(Vin/Vout_3 - 1);
   
-  Serial.print("Analog1: "); Serial.print(Vout_1, 3);  Serial.print("V\t"); Serial.print(ohms_1, 2); Serial.println("OHMs");
-  Serial.print("Analog2: "); Serial.print(Vout_2, 3);  Serial.print("V\t"); Serial.print(ohms_2, 2); Serial.println("OHMs");
-  Serial.print("Analog3: "); Serial.print(Vout_3, 3);  Serial.print("V\t"); Serial.print(ohms_3, 2); Serial.println("OHMs");
+  Serial.print("Analog1: "); Serial.print(Vout_1, 3);  Serial.print("V\t"); Serial.print(ohms_1, 2); Serial.print("OHMs\t"); Serial.print(ohm_to_temp(ohms_1),2); Serial.println("C");
+  Serial.print("Analog2: "); Serial.print(Vout_2, 3);  Serial.print("V\t"); Serial.print(ohms_2, 2); Serial.print("OHMs\t"); Serial.print(ohm_to_temp(ohms_2),2); Serial.println("C");
+  Serial.print("Analog3: "); Serial.print(Vout_3, 3);  Serial.print("V\t"); Serial.print(ohms_3, 2); Serial.print("OHMs\t"); Serial.print(ohm_to_temp(ohms_3),2); Serial.println("C");
   Serial.println("");
   delay(1000);
+}
+
+float ohm_to_temp(float R)
+{
+  float T = 1/(A + (B*log(R)) + (C*(log(R)*log(R)*log(R))));
+
+  float Tc = T - 273.15;
+
+  return Tc;
 }
