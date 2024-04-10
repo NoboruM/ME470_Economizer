@@ -124,7 +124,7 @@ class App(ctk.CTk):
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
    
         # configure the grid, but doesn't set size. I think if you keep adding stuff it works
-        App.frames[frame_id].grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        App.frames[frame_id].grid_columnconfigure((0, 1,2, 3, 4, 5, 6), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
         # first row is the system name, which has text and user input ->  2 columns
@@ -140,8 +140,8 @@ class App(ctk.CTk):
 
         lockout_temp_label = ctk.CTkLabel(App.frames[frame_id], text="Lockout Temp:")
         lockout_temp_label.grid(row=1, column=1,padx=10, pady=10, sticky="e")
-        self.lockout_temp_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
-        self.lockout_temp_input.grid(row=1, column=2, columnspan=3, padx=10, pady=10, sticky="ew")
+        self.lockout_temp_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=100)
+        self.lockout_temp_input.grid(row=1, column=2, columnspan=3, padx=10, pady=10, sticky="w")
         lockout_temp_unit_label = ctk.CTkLabel(App.frames[frame_id], text = u"\u00b0"+"F")
         lockout_temp_unit_label.grid(row=1, column=5, padx=10, pady=10,sticky="w")
         self.lockout_temp_input.bind("<Button-1>", self.NumKeyboardCallback(self.lockout_temp_input))
@@ -291,7 +291,7 @@ class App(ctk.CTk):
             with open(system_name + ".csv", 'w', newline='') as new_file:
                 csv_writer = CsvWriter(new_file) # create the new file or start writing to existing file
                 csv_writer.writerow(parameters) # Write first row as the user parameters
-            #to do: add the date
+            # TODO: add the date
             # at end if everything is good, move to last page
             self.toggle_frame_by_id("download")
 
@@ -457,7 +457,7 @@ class App(ctk.CTk):
         self.downloading_pop_up = ToplevelWindow(self, "Loading", "")
         # tell the arduino we're ready to receive data
         try:
-            response = CustomSerial("-g={}".format(selected_file_name), 9600)
+            response = CustomSerialContinuous("-g={}".format(selected_file_name), 9600)
         except:
             print("Arduino Connection error")
         # wait for response
