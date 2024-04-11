@@ -1,8 +1,11 @@
 #include <SPI.h>
 #include <SdFat.h>
+#include "RTClib.h"
 
 SdFat SD;
 File myFile;
+
+RTC_PCF8523 rtc;
 
 #define pin_CS 10
 #define pin_DET 2
@@ -19,6 +22,7 @@ void setup()
   pinMode(pin_CS, OUTPUT);
   
   SD_init();
+  rtc.begin();
 }
 
 void loop() 
@@ -96,6 +100,13 @@ void loop()
       return;
     }
 
+    //get date time
+    if(command.indexOf("-t?\r\n") != -1 && command.length() == 5)
+    {
+      return_action(cmd_g_dt());
+      return;
+    }
+
     //read file data
     if(command.indexOf("-g=") == 0)
     {
@@ -121,6 +132,13 @@ void loop()
     if(command.indexOf("-n=") == 0)
     {
       return_action(cmd_s_fn(command.substring(3, command.length()-2)));
+      return;
+    }
+    
+    //set the date and time
+    if(command.indexOf("-t=") == 0)
+    {
+      return_action(cmd_s_dt(command.substring(3, command.length()-2)));
       return;
     }
     
@@ -338,6 +356,7 @@ int8_t cmd_g_d(String _file_name)
     return 3;
   }
 
+  
   //open the file
   File _file = SD.open(_file_name);
   unsigned long _num_lines = 0;
@@ -347,7 +366,7 @@ int8_t cmd_g_d(String _file_name)
   {
     return 2;
   }
-
+  /*
   //read out data from the file
   while(_file.available())
   {
@@ -370,7 +389,7 @@ int8_t cmd_g_d(String _file_name)
   {
     return 2;
   }
-
+  */
   //read out data from the file
   while(_file.available())
   {
@@ -504,15 +523,40 @@ int8_t cmd_s_fn(String _file_name)
   return 0;
 }
 
-//this command is for getting the file parameters of a certain file which will correspond to the HVAC parameters
-int8_t cmd_g_fp(String _file_name)
+int8_t cmd_g_dt()
 {
-  return 0;
+  unsigned long _time = 0;
+
+  _time = rtc.now().unixtime();
+
+  if(_time == 0)
+  {
+    return 5;
+  }
+  
+  Serial.print(_time);
+  return -1;
 }
 
-//this command is for setting the file parameters of a certain file which will correspnd to the HVAC parameters
-int8_t cmd_s_fp(String _file_name, float _MOA, float _RAT, float _LLT, float _HLT, float _IMAT)
+int8_t cmd_s_dt(String _date_time)
 {
+  short _partial = 0;
+  
+  //Convert a string to a long in a very fun way
+  for (int i = _date_time.length()-1; i >= 0; i -= 1)
+  {
+    _partial = _date_time.charAt(i) - '0';
+
+    if(_partial < 0 || _partial > 9)
+    {
+      return 5;
+    }
+  }
+
+  long _time = _date_time.toInt();
+
+  rtc.adjust(_time);
+
   return 0;
 }
 
