@@ -1,2 +1,2 @@
-a = "hello"
-print("hello{}{},{}".format(" ", "world?", "idk"))
+oat = "17.1"
+print(float(oat))

@@ -13,7 +13,7 @@ while True:
     if ((time.time() - curr_time)> 6):
         break
     # curr_time = time.time()
-    ser.write(b"-p?\r\n")
+    ser.write("-p?\r\n".encode())
     response = ser.read_until(b'\r\n').decode().strip()
     # print(time.time() - curr_time)
     # print("response: ", response)
