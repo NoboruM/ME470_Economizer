@@ -10,7 +10,7 @@ from PIL import Image
 from time import strftime, localtime, time
 import datetime
 import calendar
-import pytz
+#import pytz
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
@@ -29,7 +29,6 @@ def CustomSerial(message, baud_rate):
         print("response: '{}'".format(response))
     ser.close()
     return response
-
 
 def CustomSerialContinuous(message, baud_rate):
     ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
@@ -116,6 +115,7 @@ class App(ctk.CTk):
         # screen size
         self.geometry(f"{1100}x{580}")
         self.my_font = ctk.CTkFont(family="TkTextFont", size=15, weight="bold")
+        self.home_font = ctk.CTkFont(family="TkTextFont", size=30, weight="bold")
 
         # root!
         self.main_container = ctk.CTkFrame(self, corner_radius=8, fg_color=self.bg)
@@ -161,7 +161,7 @@ class App(ctk.CTk):
         lockout_temp_unit_label.grid(row=1, column=7, padx=10, pady=5,sticky="nsw")
         self.lockout_temp_input.bind("<Button-1>", self.NumKeyboardCallback(self.lockout_temp_input))
 
-        min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp Temp:")
+        min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp:")
         min_OAT_label.grid(row=2, column=1,padx=10, pady=5, sticky="e")
         self.min_OAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.min_OAT_input.grid(row=2, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
@@ -178,12 +178,12 @@ class App(ctk.CTk):
         self.RAT_input.bind("<Button-1>", self.NumKeyboardCallback(self.RAT_input))
 
 
-        LL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], text="Low Limit Lockout Temp:")
+        LL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Low Limit Lockout Temp:")
         LL_Lockout_label.grid(row=4, column=1,padx=10, pady=10, sticky="e")
         self.LL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
         self.LL_Lockout_input.grid(row=4, column=2, columnspan=3, padx=10, pady=10, sticky="ew")
-        LL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], text = u"\u00b0"+"F")
-        LL_Lockout_unit_label.grid(row=4, column=5, padx=10, pady=10,sticky="w")
+        LL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
+        LL_Lockout_unit_label.grid(row=4, column=7, padx=10, pady=5,sticky="nsw")
         self.LL_Lockout_input.bind("<Button-1>", self.NumKeyboardCallback(self.LL_Lockout_input))
 
     
@@ -222,7 +222,8 @@ class App(ctk.CTk):
         self.time_input2 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//3)
         self.time_input2.grid(row=8, column=5, columnspan=2, padx=(0,10), pady=5, sticky="nsw")
         time_unit_label = ctk.CTkOptionMenu(App.frames[frame_id], values=["AM", "PM"], fg_color=self.bg)
-        time_unit_label.grid(row=8, column=7, padx=10, pady=5,sticky="nsw")        self.time_input1.bind("<Button-1>", self.NumKeyboardCallback(self.time_input1))
+        time_unit_label.grid(row=8, column=7, padx=10, pady=5,sticky="nsw")        
+        self.time_input1.bind("<Button-1>", self.NumKeyboardCallback(self.time_input1))
         self.time_input2.bind("<Button-1>", self.NumKeyboardCallback(self.time_input2))
 
         date_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Date:")
@@ -241,13 +242,14 @@ class App(ctk.CTk):
         date_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "Month/Day/Year")
         date_unit_label.grid(row=9, column=7, padx=10, pady=5,sticky="nsw")
 
+        # for running on this computer
         self.month_input.bind("<Button-1>", self.NumKeyboardCallback(self.month_input))
         self.day_input.bind("<Button-1>", self.NumKeyboardCallback(self.day_input))
         self.year_input.bind("<Button-1>", self.NumKeyboardCallback(self.year_input))
 
         # end is 3 buttons for going to each page
         
-        self.view_plot_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Ideal Economizer Curve", command=partial(self.toggle_frame_by_id, "view_curve"), corner_radius=50)
+        self.view_plot_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Ideal Economizer Curve", command=partial(self.handle_parameters_for_curve_view, App.frames[frame_id]), corner_radius=50)
         self.view_plot_button.grid(row=10, column=1, columnspan = 3, padx=20, pady=20, sticky="ew")
 
         self.save_exit_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Save & Begin Logging", command=self.handle_install_inputs, corner_radius=50)
@@ -258,33 +260,47 @@ class App(ctk.CTk):
     def handle_parameters_for_curve_view(self, frame):
         self.system_name = self.system_name_input.get()
         numerical_inputs = []
-        numerical_inputs.append(float(self.lockout_temp_input)) #0
-        numerical_inputs.append(float(self.min_OAT_input)) #1
-        numerical_inputs.append(float(self.RAT_input)) #2
-        numerical_inputs.append(float(self.LL_Lockout_input)) #3
-        numerical_inputs.append(float(self.HL_Lockout_input)) #4
-        numerical_inputs.append(float(self.MAT_input))#5
-        numerical_inputs.append(float(self.SR_input)) #6
+        numerical_inputs.append(self.lockout_temp_input)
+        numerical_inputs.append(self.min_OAT_input)
+        numerical_inputs.append(self.RAT_input)
+        numerical_inputs.append(self.LL_Lockout_input)
+        numerical_inputs.append(self.HL_Lockout_input)
+        numerical_inputs.append(self.MAT_input)
+        numerical_inputs.append(self.SR_input)
+        numerical_inputs.append(self.time_input1)
+        numerical_inputs.append(self.time_input2)
+        numerical_inputs.append(self.month_input)
+        numerical_inputs.append(self.day_input)
+        numerical_inputs.append(self.year_input)
         inputs_valid = True
         for input in numerical_inputs:
-            if input == "":
+            if input.get() == "":
                 print("input is blank")
                 inputs_valid = False
                 input.configure(fg_color= "#754543")
             else:
                 input.configure(fg_color= self.bg)
         inputs_valid = True
+        if inputs_valid:
+            # clear all inputs?
+            self.lockout_temp = float(numerical_inputs[0].get())
+            self.min_OAT = float(numerical_inputs[1].get())
+            self.RAT = float(numerical_inputs[2].get())
+            self.LL_Lockout = float(numerical_inputs[3].get())
+            self.HL_Lockout = float(numerical_inputs[4].get())
+            self.MAT = float(numerical_inputs[5].get())
+            self.SR = float(numerical_inputs[6].get())
 
         if (inputs_valid):
             # Create arrays for plotting
             oat = np.arange(-37, 111, 1)
-            MAT_at_min_OA = numerical_inputs[2]*(1 - numerical_inputs[1]) + numerical_inputs[1]*oat
+            MAT_at_min_OA = self.RAT*(1 - (self.min_OAT/100)) + self.min_OAT*oat
             MAT = np.zeros((len(oat), 1))
             for i, temp in enumerate(oat):
-                if (MAT_at_min_OA[i] < numerical_inputs[5] or temp <= numerical_inputs[3] or temp >= numerical_inputs[4]):
+                if (MAT_at_min_OA[i] < self.MAT or temp <= self.LL_Lockout or temp >= self.HL_Lockout):
                     MAT[i] = MAT_at_min_OA[i]
-                elif (temp < numerical_inputs[5]):
-                    MAT[i] = numerical_inputs[5]
+                elif (temp < self.MAT):
+                    MAT[i] = self.MAT
                 else:
                     MAT[i] = oat[i]
 
@@ -301,7 +317,9 @@ class App(ctk.CTk):
             ax.plot(oat, MAT)
             ax.set_xlabel('Outside Air Temperature [°F]')
             ax.set_ylabel('Mixed Air Temperature [°F]')
-            ax.set_title('MAT vs OAT')
+            ax.set_title('Ideal Econimzer Curve for ' + self.system_name)
+            ax.set_xlim(-30, 110)
+            ax.set_ylim(30, 100)
             
             # Embed the matplotlib plot in the frame
             canvas = FigureCanvasTkAgg(fig, master=popup_frame)
@@ -402,7 +420,7 @@ class App(ctk.CTk):
         App.frames[frame_id].grid_columnconfigure((0, 1), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
     
-        home_label = ctk.CTkLabel(App.frames[frame_id], text="Home", font=("Arial", 25))
+        home_label = ctk.CTkLabel(App.frames[frame_id], text="Welcome to EATPi", font=self.home_font)
         home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
     
         home_icon = ctk.CTkImage(light_image=Image.open('home_icon2.png'), dark_image=Image.open('home_icon2.png'), size=(50, 50))
@@ -415,20 +433,22 @@ class App(ctk.CTk):
         button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data")
         button2.grid(row=2, column=0, padx=20, pady=20, sticky="w")
     
-        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=partial(self.toggle_frame_by_id, "download"))
+        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_buttons(App.frames[frame_id], button3))
         button3.grid(row=3, column=0, padx=20, pady=20, sticky="w")
     
         button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Back")
         button4.grid(row=6, column=1, padx=20, pady=20, sticky="e")
 
-    def show_additional_buttons(self, frame):
+    def show_additional_buttons(self, frame, button):
+
+        button.configure(fg_color="gray")
         # Create two additional buttons
-        button1 = ctk.CTButton(frame, text="Select Existing System", font=self.my_font, command=partial(self.toggle_frame_by_id, "download"))
-        button2 = ctk.CTButton(frame, text="Create New System", font=self.my_font, command=partial(self.toggle_frame_by_id, "input"))
+        button5 = ctk.CTkButton(frame, text="Select Existing System", font=self.my_font, command=partial(self.toggle_frame_by_id, "download"))
+        button6 = ctk.CTkButton(frame, text="Create New System", font=self.my_font, command=partial(self.toggle_frame_by_id, "input"))
         
         # Pack the buttons to display them underneath the main button
-        button1.grid(row=4, column=0, padx=20, pady=20, sticky="n") # might need to change placement
-        button2.grid(row=5, column=0, padx=20, pady=20, sticky="n") # might need to change placement
+        button5.grid(row=4, column=0, padx=100, sticky="w")
+        button6.grid(row=5, column=0, padx=100, sticky="w")
 
     def create_download_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
@@ -521,14 +541,14 @@ class App(ctk.CTk):
 
         start_date = ctk.CTkEntry(range_input_frame)
         start_date.grid(row=0, column=0, sticky='w', pady=5)
-        #self.lockout_temp_input.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
+        self.lockout_temp_input.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
 
         label3 = ctk.CTkLabel(range_input_frame, text="to")
         label3.grid(row=0, column=1, sticky='n', pady=5)
 
         end_date = ctk.CTkEntry(range_input_frame)
         end_date.grid(row=0, column=2, sticky='e', pady=5)
-        #self.end_date.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
+        self.end_date.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
 
         sampling_rate_frame = ctk.CTkFrame(App.frames[frame_id])
         sampling_rate_frame.grid(row=6, column=2, padx=20, pady=20, sticky="n")
@@ -555,7 +575,6 @@ class App(ctk.CTk):
             file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
         # reset the colors? Seems like a bit extra
             
-
     def GetAvailableFiles(self):
         print("Getting files")
         files = []
@@ -587,7 +606,7 @@ class App(ctk.CTk):
                 self.scrollable_frame_files[i].configure(fg_color="#635888")
             else:
                 self.scrollable_frame_files[i].configure(fg_color="#39334f")
-    
+
     def KeyboardCallback(self, event):
         self.keyboard= PopupKeyboard(self.system_name_input, x=100, y=200)
         self.keyboard.disable = False
