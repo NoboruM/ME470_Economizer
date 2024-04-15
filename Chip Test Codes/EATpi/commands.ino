@@ -322,37 +322,15 @@ int8_t cmd_g_d(String _file_name)
   
   //open the file
   File _file = SD.open(_file_name);
-  unsigned long _num_lines = 0;
 
   //if there is no file give a parameter error
   if(!_file)
   {
     return 2;
   }
-  /*
-  //read out data from the file
-  while(_file.available())
-  {
-    char _data = _file.read();
-    if (_data == '\n')
-    {
-      _num_lines ++;
-    }
-  }
 
-  Serial.print("size="+String(_num_lines)+"\n");
-
-  _file.close();
+  Serial.print("size="+String(_file.size())+"\n");
   
-  //open the file
-  _file = SD.open(_file_name);
-
-  //if there is no file give a parameter error
-  if(!_file)
-  {
-    return 2;
-  }
-  */
   //read out data from the file
   while(_file.available())
   {
@@ -530,4 +508,162 @@ int8_t cmd_g_ld()
   Serial.print(String(_data.time_stamp)+","+String(_data.OAT)+","+String(_data.MAT)+","+String(_data.motor_state));
 
   return -1;
+}
+
+//set the last sample time variable
+int8_t cmd_s_lst(String _last_sample_time)
+{
+  //make sure the SD card is there
+  if(!is_SD_in)
+  {
+    SD_init();
+  }
+
+  if(!is_SD_in)
+  {
+    return 0;
+  }
+
+  //remove the old one
+  SD.remove("config/last sample time.config");
+
+  //make the new one
+  File _file = SD.open("config/last sample time.config", FILE_WRITE);
+
+  if(!_file)
+  {
+    return 0;
+  }
+
+  //printout the sample rate
+  _file.print(_last_sample_time);
+
+  _file.close();
+  
+  return 1;
+}
+
+//make sure all of the config files are where they need to be
+void check_config()
+{
+  File _file;
+  String _tmp = "";
+  
+  while(!is_SD_in)
+  {
+    SD_init();
+  }
+  
+  //read through all of the config files
+  //set the main variables based on that
+  //if the config file is missing replace it with a new one with default values
+
+  //get recording state
+  _file = SD.open("config/recording state.config");
+
+  if(!_file)
+  {
+    _file = SD.open("config/recording state.config", FILE_WRITE);
+    _file.print(default_recording_state);
+    _file.close();
+    is_recording = default_recording_state;
+  }
+  else
+  {
+    _tmp = "";
+  
+    while(_file.available())
+    {
+      char _data = _file.read();
+      _tmp += _data;
+    }
+
+    if(_tmp.toInt() == 1)
+    {
+      is_recording = true;
+    }
+    else
+    {
+      is_recording = false;
+      digitalWrite(pin_LED_red, LOW);
+      is_recording_light_on = false;
+    }
+  
+    _file.close();
+  }
+  
+  //get sample rate
+  _file = SD.open("config/sample rate.config");
+
+  if(!_file)
+  {
+    _file = SD.open("config/sample rate.config", FILE_WRITE);
+    _file.print(default_sample_rate);
+    _file.close();
+    sample_rate = default_sample_rate;
+  }
+  else
+  {
+    _tmp = "";
+  
+    while(_file.available())
+    {
+      char _data = _file.read();
+      _tmp += _data;
+    }
+
+    sample_rate = _tmp.toInt();
+  
+    _file.close();
+  }
+
+  //get recording name
+  _file = SD.open("config/recording name.config");
+
+  if(!_file)
+  {
+    _file = SD.open("config/recording name.config", FILE_WRITE);
+    _file.print(default_recording_file_name);
+    _file.close();
+    recording_file_name = default_recording_file_name;
+    return;
+  }
+  else
+  {
+    recording_file_name = "";
+  
+    while(_file.available())
+    {
+      char _data = _file.read();
+      recording_file_name += _data;
+    }
+  
+    _file.close();
+  }
+  
+  //get last sample time
+  _file = SD.open("config/last sample time.config");
+
+  if(!_file)
+  {
+    _file = SD.open("config/last sample time.config", FILE_WRITE);
+    _file.print(default_last_sample_time);
+    _file.close();
+    last_sample_time = default_last_sample_time;
+  }
+  else
+  {
+    _tmp = "";
+  
+    while(_file.available())
+    {
+      char _data = _file.read();
+      _tmp += _data;
+    }
+
+    last_sample_time = _tmp.toInt();
+  
+    _file.close();
+  }
+  return;
 }

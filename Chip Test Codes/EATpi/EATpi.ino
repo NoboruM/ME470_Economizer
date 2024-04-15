@@ -7,9 +7,14 @@ SdFat SD;
 ADS1115 ADS(0x48);
 RTC_PCF8523 rtc;
 
+#define DEBUG_MOTOR false
+
 #define pin_CS 10
 #define pin_DET 2
 #define R1 10000
+
+#define pin_LED_red 8
+#define pin_LED_white 6
 
 #define default_sample_rate "15"
 #define default_recording_state "0"
@@ -23,6 +28,7 @@ float C = 0.0000004882061793;
 bool is_SD_in = false;
 
 bool is_recording = false;
+bool is_recording_light_on = false;
 uint16_t sample_rate = default_sample_rate;
 unsigned long last_sample_time = default_last_sample_time;
 String recording_file_name = default_recording_file_name;
@@ -66,151 +72,80 @@ void loop()
     check_config();
   }
 
-  if(millis() - last_recording_check > 500)
+  if(is_recording)
   {
-    curr_time = rtc.now().unixtime();
-    
-    if(is_recording && curr_time-last_sample_time > sample_rate * 60)
+    if(millis() - last_recording_check > 500)
     {
-      record_data();
+      curr_time = rtc.now().unixtime();
+      
+      if(is_recording && curr_time-last_sample_time > sample_rate * 60)
+      {
+        if(!record_data())
+        {
+          Serial.println("DATA RECORDING ERROR!");
+        }
+      }
+  
+      last_recording_check = millis();
+
+      if(is_recording_light_on)
+      {
+        is_recording_light_on = false;
+        digitalWrite(pin_LED_red, LOW);
+      }
+      else
+      {
+        is_recording_light_on = true;
+        digitalWrite(pin_LED_red, HIGH);
+      }
+  
+      //maybe also add something in here to check if the SD card was taken out
     }
-
-    last_recording_check = millis();
-
-    //maybe also add something in here to check if the SD card was taken out
   }
+      
+#if DEBUG_MOTOR
+  if(get_motor_state())
+  {
+    digitalWrite(pin_LED_white, HIGH);
+  }
+  else
+  {
+    digitalWrite(pin_LED_white, LOW);
+  }
+#endif
 }
 
-int8_t record_data()
+bool record_data()
 {
-  //need to read sensor info
-  //write data to the sd card
-  //update the last sample time config file
-  //Serial.println(curr_time);
-  return 0;
-}
+  File _file = SD.open(recording_file_name, FILE_WRITE);
 
-//make sure all of the config files are where they need to be
-void check_config()
-{
-  File _file;
-  String _tmp = "";
-  
-  while(!is_SD_in)
-  {
-    SD_init();
-  }
-  
-  //read through all of the config files
-  //set the main variables based on that
-  //if the config file is missing replace it with a new one with default values
-
-  //get recording state
-  _file = SD.open("config/recording state.config");
-
+  //if there is no file give a parameter error
   if(!_file)
   {
-    _file = SD.open("config/recording state.config", FILE_WRITE);
-    _file.print(default_recording_state);
-    _file.close();
-    is_recording = default_recording_state;
+    return false;
+  }
+
+  if(_file.size() < 4)
+  {
+    _file.println("Date,OAT,MAT,Motor State");
+  }
+  
+  Measurement _data = measure();
+
+  _file.println(f2str(_data.time_stamp)+","+f2str(_data.OAT)+","+f2str(_data.MAT)+","+f2str(_data.motor_state));
+
+  _file.close();
+
+  if(cmd_s_lst(String(curr_time)))
+  {
+    last_sample_time = curr_time;
   }
   else
   {
-    _tmp = "";
-  
-    while(_file.available())
-    {
-      char _data = _file.read();
-      _tmp += _data;
-    }
-
-    if(_tmp.toInt() == 1)
-    {
-      is_recording = true;
-    }
-    else
-    {
-      is_recording = false;
-    }
-  
-    _file.close();
-  }
-  
-  //get sample rate
-  _file = SD.open("config/sample rate.config");
-
-  if(!_file)
-  {
-    _file = SD.open("config/sample rate.config", FILE_WRITE);
-    _file.print(default_sample_rate);
-    _file.close();
-    sample_rate = default_sample_rate;
-  }
-  else
-  {
-    _tmp = "";
-  
-    while(_file.available())
-    {
-      char _data = _file.read();
-      _tmp += _data;
-    }
-
-    sample_rate = _tmp.toInt();
-  
-    _file.close();
+    return false;
   }
 
-  //get recording name
-  _file = SD.open("config/recording name.config");
-
-  if(!_file)
-  {
-    _file = SD.open("config/recording name.config", FILE_WRITE);
-    _file.print(default_recording_file_name);
-    _file.close();
-    recording_file_name = default_recording_file_name;
-    return;
-  }
-  else
-  {
-    recording_file_name = "";
-  
-    while(_file.available())
-    {
-      char _data = _file.read();
-      recording_file_name += _data;
-    }
-  
-    _file.close();
-  }
-  
-  //get last sample time
-  _file = SD.open("config/last sample time.config");
-
-  if(!_file)
-  {
-    _file = SD.open("config/last sample time.config", FILE_WRITE);
-    _file.print(default_last_sample_time);
-    _file.close();
-    last_sample_time = default_last_sample_time;
-  }
-  else
-  {
-    _tmp = "";
-  
-    while(_file.available())
-    {
-      char _data = _file.read();
-      _tmp += _data;
-    }
-
-    last_sample_time = _tmp.toInt();
-  
-    _file.close();
-  }
-  return;
+  return true;
 }
 
 Measurement measure()
@@ -260,4 +195,10 @@ void SD_init()
     is_SD_in = true;
   }
   return;
+}
+
+//convert float to string
+String f2str(float _data)
+{
+  return String(float(round(_data * 10)) / 10.0);
 }
