@@ -7,7 +7,7 @@ import serial
 from csv import writer as CsvWriter
 from CTkPopupKeyboard import PopupKeyboard, PopupNumpad
 from PIL import Image
-from time import strftime, localtime, time
+from time import strftime, localtime, time, sleep
 import datetime
 import calendar
 #import pytz
@@ -26,34 +26,38 @@ def CustomSerial(message, baud_rate):
     response = ser.readline().decode().strip()
     while (time() - start_time) < 6 and response == "":
         ser.write("{}\r\n".format(message).encode())
-        print("response: '{}'".format(response))
+        response = ser.readline().decode().strip()
+        # print("response: '{}'".format(response))
     ser.close()
     return response
 
 def CustomSerialContinuous(message, baud_rate):
     ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
     print("{}\r\n".format(message))
-    response = CustomSerial(message, 9600)
+    response = CustomSerial(message, 115200)
+    response = ser.readline().decode().strip()
+    response = ser.readline().decode().strip()
     start_time = time()
-    print("initial response: ", response)
+    # print("initial response: ", response)
     oat_data = []
     mat_data = []
     date_data = []
     motor_data = []
     while (time() - start_time) < 6:
-        ser.write("{}\r\n".format(message).encode())
+        # ser.write("{}\r\n".format(message).encode())
         response = ser.readline().decode().strip()
-        print("while loop response: '{}'".format(response))
-        print(len(response.split(',')))
-        print("got here 2")
+        # print("while loop response: '{}'".format(response))
+        # print(len(response.split(',')))
+        # print("got here 2")
         if (response == "" or len(response.split(',')) < 4):
-            print("not enough data: ", data)
+            # print("not enough data: ", data)
             continue
-        print("got here 1")
+        # print("got here 1")
         date, OAT, MAT, Motor_state = response.split(',')
-        print("got here 2")
-        print("date: {}, OAT: {}, MAT: {}, Motor_state: {}".format(date, OAT, MAT, Motor_state))
+        # print("got here 2")
+        # print("date: {}, OAT: {}, MAT: {}, Motor_state: {}".format(date, OAT, MAT, Motor_state))
         try:
+            print("oat: ", OAT)
             oat_data.append(float(OAT))
             mat_data.append(float(MAT))
             date_data.append(date)
@@ -92,7 +96,7 @@ def CustomSerialContinuous(message, baud_rate):
 class ToplevelWindow(ctk.CTkToplevel):
     def __init__(self, title_, text_,*args, **kwargs):
         super().__init__()
-        self.geometry("400x300")
+        # self.geometry("400x300")
         self.title(title_)
         self.grid_rowconfigure((0, 1), weight=1)
         self.grid_columnconfigure((0,1), weight=1)
@@ -120,17 +124,19 @@ class App(ctk.CTk):
         # root!
         self.main_container = ctk.CTkFrame(self, corner_radius=8, fg_color=self.bg)
         self.main_container.pack(fill=tkinter.BOTH, expand=True, padx=8, pady=8)
-
+        self.oat_data = []
+        self.mat_data = []
+        self.date_data = []
+        self.motor_data = []
         # create each of th e frames. Maybe set the first one to 
         self.create_input_frame("input")
         self.create_home_frame("home")
         self.create_download_frame("download")
-        self.create_download_frame("curve")
         
         # set the initial frame to display  
         App.current = App.frames["home"]
         App.current.pack(in_=self.main_container, side=tkinter.TOP, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
-
+# MARK: Creat input frame
     def create_input_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Installation: Set Parameters for New System")
@@ -387,7 +393,7 @@ class App(ctk.CTk):
             self.toggle_frame_by_id("download")
 
     def SendInstallationInputs(self):
-        response = CustomSerial("-p?\r\n", 9600)
+        response = CustomSerial("-p?\r\n", 115200)
         print("response: ", response)
         if (response != "AOK"):
             # TODO: give some indication of error
@@ -396,13 +402,13 @@ class App(ctk.CTk):
         # epoch_date = calendar.timegm(epoch_date.timetuple())
         epoch_date = 0
         print("epoch_date: ", epoch_date)
-        response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 9600) # set the system name
-        response = CustomSerial("-t={}\r\n".format(epoch_date), 9600) # set date/time
-        response = CustomSerial("-p={},{},{},{},{}\r\n".format(self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 9600) #params in order of M%OA,RAT,LLT,HLT,iMAT
-        response = CustomSerial("-f={}\r\n".format(self.SR), 9600) # set sample rate
-        print("Sample rate: ", CustomSerial("-f?", 9600))
+        response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the system name
+        response = CustomSerial("-t={}\r\n".format(epoch_date), 115200) # set date/time
+        response = CustomSerial("-p={},{},{},{},{}\r\n".format(self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 115200) #params in order of M%OA,RAT,LLT,HLT,iMAT
+        response = CustomSerial("-f={}\r\n".format(self.SR), 115200) # set sample rate
+        print("Sample rate: ", CustomSerial("-f?", 115200))
 
-        response = CustomSerial("-s=1\r\n", 9600) # start recording
+        response = CustomSerial("-s=1\r\n", 115200) # start recording
 
     def Num_Validation(self, input): 
         if input.isdigit(): 
@@ -430,7 +436,7 @@ class App(ctk.CTk):
         button1 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Installation: Set Parameters for New System",  command=partial(self.toggle_frame_by_id, "input"))
         button1.grid(row=1, column=0, padx=20, pady=20, sticky="w")
     
-        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data")
+        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data",  command=partial(self.toggle_frame_by_id, "download"))
         button2.grid(row=2, column=0, padx=20, pady=20, sticky="w")
     
         button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_buttons(App.frames[frame_id], button3))
@@ -493,18 +499,21 @@ class App(ctk.CTk):
         def plot_matplotlib():
             # Example plot using matplotlib
             fig, ax = plt.subplots()
-            ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
+            # ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
+            print("oat_data: ", self.oat_data)
+            print("mat_data: ", self.mat_data)
+            ax.scatter(self.oat_data, self.mat_data, s=0.5, alpha=0.5)
             ax.set_xlabel('Outside Air Temperature [°F]')
             ax.set_ylabel('Mixed Air Temperature [°F]')
 
-            fig.set_size_inches(3, 2)
+            fig.set_size_inches(6, 3)
             canvas = FigureCanvasTkAgg(fig, master=plot_frame)
             canvas.draw()
             canvas.get_tk_widget().grid()
 
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Ideal Economizer Curve and Raw Data")
-        App.frames[frame_id].geometry(f"{1100}x{580}")
+        # App.frames[frame_id].geometry(f"{1100}x{580}")
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         App.frames[frame_id].grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -541,14 +550,14 @@ class App(ctk.CTk):
 
         start_date = ctk.CTkEntry(range_input_frame)
         start_date.grid(row=0, column=0, sticky='w', pady=5)
-        self.lockout_temp_input.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
+        start_date.bind("<Button-1>", self.NumKeyboardCallback(start_date))
 
         label3 = ctk.CTkLabel(range_input_frame, text="to")
         label3.grid(row=0, column=1, sticky='n', pady=5)
 
         end_date = ctk.CTkEntry(range_input_frame)
         end_date.grid(row=0, column=2, sticky='e', pady=5)
-        self.end_date.bind("<Button-1>", self.NumKeyboardCallback(self.end_date))
+        end_date.bind("<Button-1>", self.NumKeyboardCallback(end_date))
 
         sampling_rate_frame = ctk.CTkFrame(App.frames[frame_id])
         sampling_rate_frame.grid(row=6, column=2, padx=20, pady=20, sticky="n")
@@ -579,11 +588,11 @@ class App(ctk.CTk):
         print("Getting files")
         files = []
         try:
-            response = CustomSerial("-p?", 9600)
+            response = CustomSerial("-p?", 115200)
             if (response != "AOK"):
                 print("unexpected response: ", response)
                 return files
-            files = CustomSerial("-g?", 9600).split(",")
+            files = CustomSerial("-g?", 115200).split(",")
 
             for i in range(len(files)):
                 files[i] = files[i].split(".")[0]
@@ -615,6 +624,7 @@ class App(ctk.CTk):
         self.numkeyboard= PopupNumpad(event, x=750, y=200)
         self.numkeyboard.disable = False
 
+# MARK: DownloadData
     def DownloadDataFromPi(self):
         if self.selected_file is None:
             self.error_info_label.configure(text="*No File Selected", )
@@ -634,19 +644,17 @@ class App(ctk.CTk):
             returns
 
         self.downloading_pop_up = ToplevelWindow(self, "Loading", "")
+        sleep(1)
         # tell the arduino we're ready to receive data
         try:
-            response = CustomSerialContinuous("-g={}.csv".format(selected_file_name), 9600)
-            print("download data response: ", response)
+            self.date_data, self.oat_data, self.mat_data, self.motor_data = CustomSerialContinuous("-g={}.csv".format(selected_file_name), 115200)
+            print("download data response: ", date_data)
         except:
             print("Arduino Connection error")
         # wait for response
-        
-        self.oat_data = []
-        self.mat_data = []
-        self.date_data = []
-        self.time_data = []
-        self.motor_data = []
+        self.create_curve_frame("curve")
+
+        self.toggle_frame_by_id("curve")
         #with open(system_name + ".csv", 'w', newline='') as new_file:
         #    csv_writer = CsvWriter(new_file) # create the new file or start writing to existing file
         #    csv_writer.writerow(params) # Write first row as the user parameters
