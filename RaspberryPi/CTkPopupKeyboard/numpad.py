@@ -52,11 +52,13 @@ class PopupNumpad(CTkToplevel):
         self.row2 = CTkFrame(self.frame, fg_color=self.frame_color)
         self.row3 = CTkFrame(self.frame, fg_color=self.frame_color)
         self.row4 = CTkFrame(self.frame, fg_color=self.frame_color)
+        self.row5 = CTkFrame(self.frame, fg_color=self.frame_color)
         
         self.row1.grid(row=1, column=0, pady=(10,0))
         self.row2.grid(row=2, column=0, padx=10)
         self.row3.grid(row=3, column=0, padx=10)
         self.row4.grid(row=4, column=0, pady=(0,10))
+        self.row5.grid(row=5, column=0, pady=(0,10))
     
         self._init_keys(**kwargs)
     
@@ -76,7 +78,9 @@ class PopupNumpad(CTkToplevel):
             'row1' : ['7','8','9'],
             'row2' : ['4','5','6'],
             'row3' : ['1','2','3'],
-            'row4' : ['.','0','◀']
+            'row4' : ['.','0','-'],
+            'row5' : [' ','Del',' ']
+            # 'row5' : [' ','◀',' ']
             }
         
         for row in self.keys.keys(): 
@@ -123,6 +127,17 @@ class PopupNumpad(CTkToplevel):
                               command=lambda k=k: self._attach_key_press(k), **kwargs).grid(row=0,column=i)
                     i += 1
             
+            elif row == 'row5':
+                i = 2
+                for k in self.keys[row]:
+                    CTkButton(self.row5,
+                              text=k,
+                              width=self.keywidth,
+                              height=self.keyheight,
+                              fg_color=self.keycolor,
+                              command=lambda k=k: self._attach_key_press(k), **kwargs).grid(row=0,column=i)
+                    i += 1
+            
             self.up = False
             self.hide = False
             
@@ -146,7 +161,7 @@ class PopupNumpad(CTkToplevel):
             self.hide = True
         
     def _attach_key_press(self, k):
-        if k == '◀':
+        if k == 'Del':
             try:
                 text = self.attach.get(0.0, END)
                 self.attach.delete(0.0, END)
