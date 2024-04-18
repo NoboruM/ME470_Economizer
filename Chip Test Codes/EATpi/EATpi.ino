@@ -7,18 +7,18 @@ SdFat SD;
 ADS1115 ADS(0x48);
 RTC_PCF8523 rtc;
 
-#define DEBUG_MOTOR false
+#define DEBUG_MOTOR true
 
 #define pin_CS 10
 #define pin_DET 2
 #define R1 10000
 
-#define pin_LED_red 8
-#define pin_LED_white 6
+#define pin_LED_red 6
+#define pin_LED_white 8
 
-#define default_sample_rate "15"
-#define default_recording_state "0"
-#define default_last_sample_time "0"
+#define default_sample_rate 15
+#define default_recording_state 0
+#define default_last_sample_time 0
 #define default_recording_file_name "tmp.csv"
 
 float A = 0.001595266148;
@@ -34,11 +34,11 @@ unsigned long last_sample_time = default_last_sample_time;
 String recording_file_name = default_recording_file_name;
 
 unsigned long last_recording_check = 0;
-long curr_time = 0;
+unsigned long curr_time = 0;
 
 struct EAT_measurement
 {
-  long time_stamp;
+  unsigned long time_stamp;
   float OAT;
   float MAT;
   bool motor_state;
@@ -48,15 +48,17 @@ typedef struct EAT_measurement Measurement;
 
 void setup() 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   ADS.begin();
   pinMode(pin_DET, INPUT);
   pinMode(pin_CS, OUTPUT);
 
+  SD_init();
+  
   while(!is_SD_in)
   {
-    SD_init();
     delay(5000);
+    SD_init();
   }
   
   check_config();
@@ -69,7 +71,6 @@ void loop()
   if(Serial.available() > 0)
   {
     parse_command();
-    check_config();
   }
 
   if(is_recording)
@@ -78,7 +79,7 @@ void loop()
     {
       curr_time = rtc.now().unixtime();
       
-      if(is_recording && curr_time-last_sample_time > sample_rate * 60)
+      if(is_recording && (curr_time-last_sample_time > (sample_rate * 60-1) || curr_time-last_sample_time < 0))
       {
         if(!record_data())
         {
@@ -132,11 +133,11 @@ bool record_data()
   
   Measurement _data = measure();
 
-  _file.println(f2str(_data.time_stamp)+","+f2str(_data.OAT)+","+f2str(_data.MAT)+","+f2str(_data.motor_state));
+  _file.println(String(_data.time_stamp)+","+f2str(_data.OAT)+","+f2str(_data.MAT)+","+_data.motor_state);
 
   _file.close();
 
-  if(cmd_s_lst(String(curr_time)))
+  if(cmd_s_lst(curr_time))
   {
     last_sample_time = curr_time;
   }
@@ -181,6 +182,24 @@ float ohm_to_temp(float _R)
 
 bool get_motor_state()
 {
+  int16_t _last_measurement = 0;
+  int16_t _curr_measurement = ADS.readADC(2);
+  unsigned long _sum = 0;
+  
+  for (int i = 0; i<25; i++)
+  {
+    _sum += abs(_curr_measurement-_last_measurement);
+    _last_measurement = _curr_measurement;
+    _curr_measurement = ADS.readADC(2);
+    delay(10);
+  }
+  float _ans = _sum/25;
+  
+  if(_ans > 150)
+  {
+    return true;
+  }
+  
   return false;
 }
 
@@ -200,5 +219,5 @@ void SD_init()
 //convert float to string
 String f2str(float _data)
 {
-  return String(float(round(_data * 10)) / 10.0);
+  return String(float(round(_data * 10)) / 10.0).substring(0,4);
 }

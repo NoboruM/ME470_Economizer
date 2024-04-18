@@ -83,11 +83,25 @@ void parse_command()
     return_action(cmd_g_ld());
     return;
   }
+  
+  //get the list of file parameters
+  if(command.indexOf("-x?\r\n") == 0 && command.length() == 5)
+  {
+    return_action(cmd_g_fps());
+    return;
+  }
 
   //read file data
   if(command.indexOf("-g=") == 0)
   {
     return_action(cmd_g_d(command.substring(3, command.length()-2)));
+    return;
+  }
+
+  //read parameter data
+  if(command.indexOf("-x=") == 0)
+  {
+    return_action(cmd_g_fp(command.substring(3, command.length()-2)));
     return;
   }
 
@@ -102,6 +116,7 @@ void parse_command()
   if(command.indexOf("-s=") == 0)
   {
     return_action(cmd_s_rs(command.substring(3, command.length()-2)));
+    check_config();
     return;
   }
   
@@ -109,6 +124,7 @@ void parse_command()
   if(command.indexOf("-n=") == 0)
   {
     return_action(cmd_s_fn(command.substring(3, command.length()-2)));
+    check_config();
     return;
   }
   
@@ -116,6 +132,15 @@ void parse_command()
   if(command.indexOf("-t=") == 0)
   {
     return_action(cmd_s_dt(command.substring(3, command.length()-2)));
+    check_config();
+    return;
+  }
+  
+  //set the date and time
+  if(command.indexOf("-p=") == 0)
+  {
+    return_action(cmd_s_fp(command.substring(3, command.length()-2)));
+    check_config();
     return;
   }
   
@@ -175,7 +200,7 @@ int8_t cmd_g_sr()
 
   if(!_file)
   {
-    if(cmd_s_sr(default_sample_rate) != 0)
+    if(cmd_s_sr(String(default_sample_rate)) != 0)
     {
       return 5;
     }
@@ -249,7 +274,7 @@ int8_t cmd_g_rs()
 
   if(!_file)
   {
-    if(cmd_s_rs(default_recording_state) != 0)
+    if(cmd_s_rs(String(default_recording_state)) != 0)
     {
       return 5;
     }
@@ -329,7 +354,42 @@ int8_t cmd_g_d(String _file_name)
     return 2;
   }
 
-  Serial.print("size="+String(_file.size())+"\n");
+  Serial.print("size=");Serial.print(_file.size());Serial.print("\n");
+  
+  //read out data from the file
+  while(_file.available())
+  {
+    char _data = _file.read();
+    Serial.write(_data);
+  }
+
+  _file.close();
+  
+  return -1;
+}
+
+//this command is for getting the data from a param file
+int8_t cmd_g_fp(String _file_name)
+{
+  if(!is_SD_in)
+  {
+    SD_init();
+  }
+
+  if(!is_SD_in)
+  {
+    return 3;
+  }
+
+  
+  //open the file
+  File _file = SD.open("/params/" + _file_name);
+
+  //if there is no file give a parameter error
+  if(!_file)
+  {
+    return 2;
+  }
   
   //read out data from the file
   while(_file.available())
@@ -372,6 +432,59 @@ int8_t cmd_g_fns()
       _file.getName(_name, 64);
       
       char* _csv_check = strstr(_name, ".csv");
+      
+      if(_csv_check != nullptr)
+      {
+        //add commas where they belong
+        if(_file_count > 0 )
+        {
+          Serial.print(",");
+        }
+        _file_count ++;
+        
+        Serial.print(_name);
+      }
+    }
+    else
+    {
+      break;
+    }
+
+    _file.close();
+  }
+  
+  return -1;
+}
+
+//this command is for listing all of the files that are stored in the device besides the config file
+int8_t cmd_g_fps()
+{
+  if(!is_SD_in)
+  {
+    SD_init();
+  }
+
+  if(!is_SD_in)
+  {
+    return 3;
+  }
+
+  //open the main folder of the SD card
+  File _dir = SD.open("/params/");
+  int _file_count = 0;
+
+  while(true) //loop through all entries and create a list of their names
+  {
+    //open the next file
+    File _file = _dir.openNextFile();
+
+    //make sure there is a file to read
+    if(_file)
+    {
+      char _name[64];
+      _file.getName(_name, 64);
+      
+      char* _csv_check = strstr(_name, ".params");
       
       if(_csv_check != nullptr)
       {
@@ -511,7 +624,7 @@ int8_t cmd_g_ld()
 }
 
 //set the last sample time variable
-int8_t cmd_s_lst(String _last_sample_time)
+int8_t cmd_s_lst(unsigned long _last_sample_time)
 {
   //make sure the SD card is there
   if(!is_SD_in)
@@ -541,6 +654,46 @@ int8_t cmd_s_lst(String _last_sample_time)
   _file.close();
   
   return 1;
+}
+
+//set the last sample time variable
+int8_t cmd_s_fp(String _input)
+{
+  //make sure the SD card is there
+  if(!is_SD_in)
+  {
+    SD_init();
+  }
+
+  if(!is_SD_in)
+  {
+    return 3;
+  }
+
+  if(_input.indexOf(',') == -1)
+  {
+    return 2;
+  }
+  String _file_name = _input.substring(0,_input.indexOf(','));
+  _input = _input.substring(_input.indexOf(',')+1);
+
+  //remove the old one
+  SD.remove("/params/"+_file_name);
+
+  //make the new one
+  File _file = SD.open("/params/"+_file_name, FILE_WRITE);
+
+  if(!_file)
+  {
+    return 3;
+  }
+
+  //printout the sample rate
+  _file.print(_input);
+
+  _file.close();
+  
+  return 0;
 }
 
 //make sure all of the config files are where they need to be
