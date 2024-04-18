@@ -132,6 +132,7 @@ class App(ctk.CTk):
         self.create_input_frame("input")
         self.create_home_frame("home")
         self.create_download_frame("download")
+        self.create_download_frame("curve")
         
         # set the initial frame to display  
         App.current = App.frames["home"]
@@ -332,6 +333,7 @@ class App(ctk.CTk):
             canvas.draw()
             canvas.get_tk_widget().pack()
 
+    #STORE INTO CSV FILE????
     def handle_install_inputs(self):
         self.system_name = self.system_name_input.get()
         numerical_inputs = []
@@ -417,15 +419,15 @@ class App(ctk.CTk):
             return True
         return False
             
-        
     def create_home_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Home")
     
         # configure the grid, but doesn't set size. I think if you keep adding stuff it works
         App.frames[frame_id].grid_columnconfigure((0, 1), weight=1)
-        App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
-    
+        App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=0, minsize=90)
+
+
         home_label = ctk.CTkLabel(App.frames[frame_id], text="Welcome to EATPi", font=self.home_font)
         home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
     
@@ -434,27 +436,38 @@ class App(ctk.CTk):
         image1.grid(row=0, column=1, padx=20, pady=20, sticky="e")
     
         button1 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Installation: Set Parameters for New System",  command=partial(self.toggle_frame_by_id, "input"))
-        button1.grid(row=1, column=0, padx=20, pady=20, sticky="w")
+        button1.grid(row=1, column=0, padx=20, pady=20, sticky="nsw")
     
-        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data",  command=partial(self.toggle_frame_by_id, "download"))
-        button2.grid(row=2, column=0, padx=20, pady=20, sticky="w")
-    
-        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_buttons(App.frames[frame_id], button3))
-        button3.grid(row=3, column=0, padx=20, pady=20, sticky="w")
-    
-        button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Back")
-        button4.grid(row=6, column=1, padx=20, pady=20, sticky="e")
+        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data", command=partial(self.toggle_frame_by_id, "download"))
+        button2.grid(row=2, column=0, padx=20, pady=20, sticky="nsw")
 
-    def show_additional_buttons(self, frame, button):
+        button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Select Existing System", command=partial(self.toggle_frame_by_id, "download"))
+        button4.grid(row=4, column=0, padx=60, pady=20, sticky="nsw")
+        button4.grid_forget()
 
-        button.configure(fg_color="gray")
-        # Create two additional buttons
-        button5 = ctk.CTkButton(frame, text="Select Existing System", font=self.my_font, command=partial(self.toggle_frame_by_id, "download"))
-        button6 = ctk.CTkButton(frame, text="Create New System", font=self.my_font, command=partial(self.toggle_frame_by_id, "input"))
-        
-        # Pack the buttons to display them underneath the main button
-        button5.grid(row=4, column=0, padx=100, sticky="w")
-        button6.grid(row=5, column=0, padx=100, sticky="w")
+        button5 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Create New System", command=partial(self.toggle_frame_by_id, "input"))
+        button5.grid(row=5, column=0, padx=60, pady=20, sticky="nsw")
+        button5.grid_forget() 
+
+        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_home_buttons(App.frames[frame_id], button3, button4, button5))
+        button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
+
+    def show_additional_home_buttons(self, frame, main_button, button1, button2):
+        if getattr(main_button, "additional_buttons_shown", False):
+            main_button.configure(fg_color="#3668A0")
+            # Remove the additional buttons if they are already shown
+            button1.grid_forget()
+            button2.grid_forget()
+            # Update the attribute to indicate that the additional buttons are hidden
+            main_button.additional_buttons_shown = False
+        else:
+            main_button.configure(fg_color="#24476C")
+            # Pack the buttons to display them underneath the main button
+            button1.grid(row=4, column=0, padx=60, pady=20, sticky="nsw")
+            button2.grid(row=5, column=0, padx=60, pady=20, sticky="nsw")
+
+            # Update the attribute to indicate that the additional buttons are shown
+            main_button.additional_buttons_shown = True
 
     def create_download_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
@@ -494,83 +507,328 @@ class App(ctk.CTk):
 
         self.back_button = ctk.CTkButton(App.frames[frame_id], command=partial(self.toggle_frame_by_id, "home"), font=self.my_font, text="Back")
         self.back_button.grid(row=3, column=3, padx=20, pady=20, sticky="ew")
-        
-    def create_curve_frame(self, frame_id):
-        def plot_matplotlib():
-            # Example plot using matplotlib
-            fig, ax = plt.subplots()
-            # ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
-            print("oat_data: ", self.oat_data)
-            print("mat_data: ", self.mat_data)
-            ax.scatter(self.oat_data, self.mat_data, s=0.5, alpha=0.5)
-            ax.set_xlabel('Outside Air Temperature [°F]')
-            ax.set_ylabel('Mixed Air Temperature [°F]')
 
-            fig.set_size_inches(6, 3)
+
+    def create_curve_frame(self, frame_id, raw_data, curve_parameters):
+        # three string variable parameters, int32 output
+        def mm_dd_yy_to_epoch(month, day, year):
+            # Parse the month, day, and year strings
+            dt_string = f"{month}-{day}-{year} 00:00:00"
+            dt_object = datetime.datetime.strptime(dt_string, "%m-%d-%y %H:%M:%S")
+
+            # Convert datetime object to epoch time (int32)
+            epoch_time = int(dt_object.timestamp())
+
+            return epoch_time
+
+        #returns three string variables
+        def epoch_to_mm_dd_yy(epoch_time):
+            # Convert epoch time to datetime object
+            dt_object = datetime.datetime.fromtimestamp(epoch_time)
+
+            # Extract month, day, and year
+            month = str(dt_object.month).zfill(2)
+            day = str(dt_object.day).zfill(2)
+            year = str(dt_object.year)[-2:]
+
+            return month, day, year
+
+        def process_data_points(data_file_name):
+            #datetime64[s]
+            # Process csv file of data points
+            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', 'int32'), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
+            date = data['Date']
+            oat = data['OAT']
+            mat = data['MAT']
+            motor = data['Motor_State']
+
+            date_on = []
+            date_off = []
+            oat_on = []
+            oat_off = []
+            mat_on = []
+            mat_off = []
+
+            for i in range(len(motor)):
+                if motor[i] == 1:
+                    date_on.append(date[i])
+                    oat_on.append(oat[i])
+                    mat_on.append(mat[i])
+                else:
+                    date_off.append(date[i])
+                    oat_off.append(oat[i])
+                    mat_off.append(mat[i])
+
+            start_month, start_date, start_year = epoch_to_mm_dd_yy(date[0])
+            end_month, end_date, end_year = epoch_to_mm_dd_yy(date[len(date) - 1])
+            return start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off
+
+        def process_ideal_curve_parameters(parameters_file_name):
+        # Process parameter csv file of ideal curve
+            parameters_array = {} # array of length 8
+            try:
+                with open(parameters_file_name, 'r') as file:
+                    reader = csv.reader(file)
+                    for row in reader:
+                        if not row:
+                            continue
+                        # Extract variable name and value
+                        variable_name, value = row
+                        # Remove any leading or trailing whitespace from the variable name
+                        variable_name = variable_name.strip()
+                        # Convert the value to an appropriate data type if needed
+                        if variable_name == 'Time':
+                            # If the variable represents time, keep it as a string
+                            parameters_array[variable_name] = value
+                        elif variable_name == 'Date':
+                            # If the variable represents a date, keep it as a string
+                            parameters_array[variable_name] = value
+                        elif variable_name == 'Sampling Rate':
+                            # If the variable represents a date, keep it as a string
+                            parameters_array[variable_name] = value
+                        else:
+                            try:
+                                parameters_array[variable_name] = float(value)
+                            except ValueError:
+                                print('Error in reading curve paramters')
+            except FileNotFoundError:
+                print(f"The file '{parameters_file_name}' does not exist.")
+            return parameters_array
+
+        def plot_standardized_settings(ax):
+            # Label and Tweak Plot Design
+            ax.set_title('Curve of ' + curve_parameters + ' and Raw Data of ' + raw_data, fontsize=6)
+            ax.set_xlabel('Outside Air Temperature [°F]', fontsize=6, labelpad=5)
+            ax.set_ylabel('Mixed Air Temperature [°F]', fontsize=6, labelpad=5)
+            ax.tick_params(axis='both', which='major', labelsize=4)
+            ax.set_xlim(-30, 110)
+            ax.set_ylim(30, 100)
+
+            left = 0.15
+            bottom = 0.15
+            width = 0.7
+            height = 0.7
+            ax.set_position([left, bottom, width, height])
+
+        def draw_ideal_curve(ax, parameters):
+            # Process parameters for ideal economizer curve
+            min_oat = parameters["M%OAT"] #float
+            rat = parameters["RAT"] #float
+            lllt = parameters["LLLT"] #float
+            hllt = parameters["HLLT"] #float
+            i_mat = parameters["MAT"] #float
+
+            # Create ideal economizer curve
+            oat_for_plot = np.arange(-37, 111, 1)
+            MAT_at_min_OA = rat*(1 - (min_oat/100)) + (min_oat/100)*oat_for_plot
+            mat_for_plot = np.zeros((len(oat_for_plot), 1)) # maybe dont make them zero?
+            for i, temp in enumerate(oat_for_plot):
+                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt):
+                    mat_for_plot[i] = MAT_at_min_OA[i]
+                elif (temp < i_mat):
+                    mat_for_plot[i] = i_mat
+                else:
+                    mat_for_plot[i] = oat_for_plot[i]
+
+            # Plot ideal economizer curve
+            ax.plot(oat_for_plot, mat_for_plot, color='#fa8b41')
+
+        # ASSUMES THE RAW DATA FILE IS IN TIME ORDER
+        def handle_date_range(m1, d1, y1, m2, d2, y2, parameters):
+            if (m1 == '') & (d1 == '') & (y1 == '') & (m2 == '') & (d2 == '') & (y2 == ''):
+                on_start_index = 0
+                off_start_index = 0
+                on_end_index = len(date_on) - 1
+                off_end_index = len(date_off) - 1
+                handle_plot("", oat_on, oat_off, mat_on, mat_off, parameters)
+                return #on_start_index, off_start_index, on_end_index, off_end_index
+
+            # if any of the entries are empty, make entries red
+            if (m1 == '') | (d1 == '') | (y1 == '') | (m2 == '') | (d2 == '') | (y2 == ''):
+                #make buttons red
+                print("Please fill in all the entries")
+                return #on_start_index, off_start_index, on_end_index, off_end_index
+
+            epoch1 = mm_dd_yy_to_epoch(m1, d1, y1) #int
+            epoch2 = mm_dd_yy_to_epoch(m2, d2, y2) #int
+
+            if epoch1 > epoch2:
+                # turn buttons red
+                print("First date should be earlier than second date")
+                return
+
+            for i in range(len(date_on)):
+                if date_on[i] >= epoch1:
+                    on_start_index = i
+                break
+            for i in range(len(date_off)):
+                if date_off[i] >= epoch1:
+                    off_start_index = i
+                break
+            for i in range(len(date_on)-1, -1, -1):
+                if date_on[i] <= epoch2:
+                    on_end_index = i
+                break
+            for i in range(len(date_off)-1, -1, -1):
+                if date_off[i] <= epoch2:
+                    off_end_index = i
+                break
+            handle_plot("", oat_on, oat_off, mat_on, mat_off, parameters)
+
+        def handle_plot(called_from, oat_on, oat_off, mat_on, mat_off, parameters):
+            ax.clear()
+            if curve_check.get():
+                draw_ideal_curve(ax, parameters)
+            if called_from == "points":
+                if points_check.get() == False:
+                    on_check.set(False)
+                    off_check.set(False)
+                else:
+                    on_check.set(True)
+                    off_check.set(True)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+            else:
+                if on_check.get() & off_check.get():
+                    points_check.set(True)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+                elif on_check.get():
+                    points_check.set(True)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
+                elif off_check.get():
+                    points_check.set(True)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+                else:
+                    points_check.set(False)
+                    on_check.set(False)
+                    off_check.set(False)
+
+            plot_standardized_settings(ax)
+            canvas.draw()
+            canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
+
+        def plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters):
+
+            # Plot raw_data
+            fig, ax = plt.subplots()
+            ax.scatter(oat_on, mat_on, marker='o', color='#3668A0', s=0.1)
+            ax.scatter(oat_off, mat_off, marker='o', color='#3668A0', s=0.1)
+
+            draw_ideal_curve(ax, parameters)
+            plot_standardized_settings(ax)
+            fig.set_size_inches(4, 3)
             canvas = FigureCanvasTkAgg(fig, master=plot_frame)
             canvas.draw()
-            canvas.get_tk_widget().grid()
+            canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
+
+            return canvas, fig, ax
+        
+        # example files; delete in main file
+        # raw_data = "Randomly Generated Data with motor.csv"
+        # curve_parameters = "example_curve_parameters.csv"
+
+        start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off = process_data_points(raw_data)
+        parameters_array = process_ideal_curve_parameters(curve_parameters)
+
+        on_start_index = 0
+        off_start_index = 0
+        on_end_index = len(date_on) - 1
+        off_end_index = len(date_off) - 1
 
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
-        self.title("Ideal Economizer Curve and Raw Data")
-        # App.frames[frame_id].geometry(f"{1100}x{580}")
-        App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
-        App.frames[frame_id].grid_columnconfigure((0, 1, 2), weight=1)
+        self.title("Ideal Economizer Curve and Data Points")
 
-        # Create title for page
-        title_label = ctk.CTkLabel(App.frames[frame_id], text="Ideal Economizer Curve and Raw Data", font=('Arial', 25, 'bold'))
-        title_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+        num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
 
-        # Create title for plot
-        title_label = ctk.CTkLabel(App.frames[frame_id], text="MAT vs OAT")
-        title_label.grid(row=1, column=0, columnspan=2, rowspan=1, padx=20, pady=20, sticky="n")
+        # Delete in main file
+        App.frames[frame_id].my_font = ctk.CTkFont(family="TkTextFont", size=15, weight="bold")
+        App.frames[frame_id].home_font = ctk.CTkFont(family="TkTextFont", size=30, weight="bold")
+        App.frames[frame_id].geometry(f"{1100}x{580}")
+        input_column_width = 350
+
+        # replace main_frame with App.frames[frame_id]
+        #replace root with self.
+        # place self. infront of commands
 
         # Create subframes for plot and widgets
         plot_frame = ctk.CTkFrame(App.frames[frame_id])
-        plot_frame.grid(row=2, column=0, columnspan=2, rowspan=5, padx=20, pady=20, sticky="w")
+        plot_frame.pack(side=ctk.LEFT, padx=10, pady=10, fill=ctk.BOTH, expand=False)
 
-        # Plot using matplotlib
-        plot_matplotlib()
+        widgets_frame = ctk.CTkFrame(App.frames[frame_id], width=input_column_width)
+        widgets_frame.pack(side=ctk.LEFT, padx=10, pady=10)
 
-        # Create widgets on the right side
-        label1 = ctk.CTkLabel(App.frames[frame_id], text="Toggles:", font=('Arial', 18, 'bold'))
-        label1.grid(row=1, column=2, sticky='w', pady=5)
+        # Plot using matplotlib, moved down so it could consider toggles
+        canvas, fig, ax = plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters_array)
 
-        toggle1 = ctk.CTkCheckBox(App.frames[frame_id], text="Ideal Curve")
-        toggle1.grid(row=2, column=2, sticky='w', pady=5)
+        curve_check = ctk.BooleanVar()
+        curve_check.set(True)
+        points_check = ctk.BooleanVar()
+        points_check.set(True)
+        on_check = ctk.BooleanVar()
+        on_check.set(True)
+        off_check = ctk.BooleanVar()
+        off_check.set(True)
 
-        toggle2 = ctk.CTkCheckBox(App.frames[frame_id], text="Data Points")
-        toggle2.grid(row=3, column=2, sticky='w', pady=5)
+        ideal_curve_toggle = ctk.CTkCheckBox(widgets_frame, text="Ideal Economizer Curve", font=self.my_font, variable=curve_check, command=lambda: self.handle_plot("curve", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        ideal_curve_toggle.grid(row=1, column=0, sticky='w', pady=5)
 
-        label2 = ctk.CTkLabel(App.frames[frame_id], text="Data Range:", font=('Arial', 18, 'bold'))
-        label2.grid(row=4, column=2, sticky='w', pady=5)
+        data_points_toggle = ctk.CTkCheckBox(widgets_frame, text="Data Points", font=self.my_font, variable=points_check, command=lambda: self.handle_plot("points", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        data_points_toggle.grid(row=2, column=0, sticky='w', pady=5)
 
-        range_input_frame = ctk.CTkFrame(App.frames[frame_id])
-        range_input_frame.grid(row=5, column=2, padx=20, pady=20, sticky="w")
+        motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor On", font=self.my_font, variable=on_check, command=lambda: self.handle_plot("on", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_on_toggle.grid(row=3, column=0, sticky='w', padx=30, pady=5)
 
-        start_date = ctk.CTkEntry(range_input_frame)
-        start_date.grid(row=0, column=0, sticky='w', pady=5)
-        start_date.bind("<Button-1>", self.NumKeyboardCallback(start_date))
+        motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor Off", font=self.my_font, variable=off_check, command=lambda: self.handle_plot("off", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_off_toggle.grid(row=4, column=0, sticky='w', padx=30, pady=5)
 
-        label3 = ctk.CTkLabel(range_input_frame, text="to")
-        label3.grid(row=0, column=1, sticky='n', pady=5)
+        date_range_label = ctk.CTkLabel(widgets_frame, text="Date Range:", font=self.my_font)
+        date_range_label.grid(row=5, column=0, sticky='w', pady=5)
 
-        end_date = ctk.CTkEntry(range_input_frame)
-        end_date.grid(row=0, column=2, sticky='e', pady=5)
-        end_date.bind("<Button-1>", self.NumKeyboardCallback(end_date))
+        date_range_frame =ctk.CTkFrame(widgets_frame, width=input_column_width, bg_color=widgets_frame.cget("bg_color"), fg_color=widgets_frame.cget("fg_color"))
+        date_range_frame.grid(row=6, column=0, sticky='ew', pady=5)
 
-        sampling_rate_frame = ctk.CTkFrame(App.frames[frame_id])
-        sampling_rate_frame.grid(row=6, column=2, padx=20, pady=20, sticky="n")
+        placeholder_width = 2
+        input_width = (input_column_width - placeholder_width) // 10
 
-        label4 = ctk.CTkLabel(sampling_rate_frame, text="Sampling Rate:", font=('Arial', 18, 'bold'))
-        label4.grid(row=0, column=0, sticky='w', pady=5)
+        #color boxes red if input is invalid
+        self.month1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_month, validate="key", validatecommand=num_val, width=input_width)
+        self.month1_entry.grid(row=0, column=0, sticky='ew', padx = 4, pady=5)
+        self.month1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.month1_entry))
+        slash_label_1 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label_1.grid(row=0, column=1, sticky="nsw")
+        self.date1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_date, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
+        self.date1_entry.grid(row=0, column=2, sticky='nsw', pady=5)
+        self.date1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.date1_entry))
+        slash_label_2 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label_2.grid(row=0, column=3, sticky="nsw")
+        self.year1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_year, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
+        self.year1_entry.grid(row=0, column=4, sticky='nsw', pady=5)
+        self.year1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year1_entry))
 
-        # need to refer to the input data
-        label5 = ctk.CTkLabel(sampling_rate_frame, text="15", font=('Arial', 18, 'bold'))
-        label5.grid(row=0, column=1, sticky='n', pady=5)
+        to_label = ctk.CTkLabel(date_range_frame, text=" to ")
+        to_label.grid(row=0, column=5, sticky='w', pady=5)
 
-        label5 = ctk.CTkLabel(sampling_rate_frame, text="min", font=('Arial', 18, 'bold'))
-        label5.grid(row=0, column=2, sticky='e', pady=5)
+        self.month2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_month, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
+        self.month2_entry.grid(row=0, column=6, sticky='nsw', pady=5)
+        self.month2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.month2_entry))
+        slash_label_3 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label_3.grid(row=0, column=7, sticky="nsw")
+        self.date2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_date, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
+        self.date2_entry.grid(row=0, column=8, sticky='nsw', pady=5)
+        self.date2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.date2_entry))
+        slash_label_4 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label_4.grid(row=0, column=9, sticky="nsw")
+        self.year2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_year, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
+        self.year2_entry.grid(row=0, column=10, sticky='nse', padx=4, pady=5)
+        self.year2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year2_entry))
+
+        submit_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Submit", corner_radius=4, width=1, command=lambda: self.handle_date_range(self.month1_entry.get(), self.date1_entry.get(), self.year1_entry.get(), 
+                    self.month2_entry.get(), self.date2_entry.get(), self.year2_entry.get(), parameters_array)) 
+        submit_button.grid(row=7, column=0, sticky='e', padx=4, pady=5)
+
+        sampling_rate_label = ctk.CTkLabel(widgets_frame, text=f"Sampling Rate: {parameters_array['Sampling Rate']} min", font=self.my_font)
+        sampling_rate_label.grid(row=8, column=0, sticky='w', pady=5)
 
     def FilterFiles(self, event):
         text = self.search_input.get()
@@ -652,7 +910,8 @@ class App(ctk.CTk):
         except:
             print("Arduino Connection error")
         # wait for response
-        self.create_curve_frame("curve")
+        # need to change randomly generated data with motor to a paramter
+        self.create_curve_frame("curve", selected_file_name, "Randomly Generated Data with motor.csv")
 
         self.toggle_frame_by_id("curve")
         #with open(system_name + ".csv", 'w', newline='') as new_file:
