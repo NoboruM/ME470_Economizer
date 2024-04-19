@@ -2,7 +2,7 @@ from time import strftime, localtime, time
 import datetime
 from datetime import datetime
 import calendar
-import pytz
+# import pytz
 
 # year = "2024"
 # month = "4"
@@ -19,5 +19,9 @@ import pytz
 # print("actual: ", int(time()))
 # print("error: ", (int(time()) - epoch_date)/3600)
 
-
-print((1712819166 - 1712801100)/(3600))
+a = ["sdf", 's', 'sdfa', 'sdfkje']
+b, c, d, e = a
+print(b)
+print(c)
+print(d)
+print(e)

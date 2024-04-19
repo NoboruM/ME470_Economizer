@@ -36,7 +36,6 @@ def CustomSerial(message, baud_rate):
 def ReadAllData(message, baud_rate): # Randomly generated data with motor -> 17.219s without csv file read
     try:
         print("reading all data: ")
-        filename = "CSV_Files/{}".format(message[3:])
 
         ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
         print("{}\r\n".format(message))
@@ -52,6 +51,7 @@ def ReadAllData(message, baud_rate): # Randomly generated data with motor -> 17.
         date_data = []
         motor_data = []
         test_start = time()
+        filename = "CSV_Files/{}".format(message[3:])
         with open(filename, 'w', newline='') as csv_file:
             print("opened file")
             csv_writer = csv.writer(csv_file, delimiter=',')
@@ -393,7 +393,7 @@ class App(ctk.CTk):
             # store in CSV file
             parameters = [self.min_OAT,self.RAT,self.LL_Lockout,self.HL_Lockout,self.MAT, self.SR]
             print(parameters)
-            file_store = "ParamFiles/" + self.system_name + ".param"
+            file_store = "ParamFiles/" + self.system_name + ".params"
             with open(file_store, 'w', newline='') as new_file:
                csv_writer = csv.writer(new_file) # create the new file or start writing to existing file
                csv_writer.writerow(parameters) # Write first row as the user parameters
@@ -412,7 +412,7 @@ class App(ctk.CTk):
         # epoch_date = calendar.timegm(epoch_date.timetuple())
         epoch_date = 0
         print("epoch_date: ", epoch_date)
-        filename = self.system_name + '.param'
+        filename = self.system_name + '.params'
         response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the recording filename
         response = CustomSerial("-t={}\r\n".format(epoch_date), 115200) # set date/time
         response = CustomSerial("-p={},{},{},{},{},{}\r\n".format(filename, self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 115200) #params in order of M%OA,RAT,LLT,HLT,iMAT
@@ -525,7 +525,7 @@ class App(ctk.CTk):
         self.back_button = ctk.CTkButton(App.frames[frame_id], command=partial(self.toggle_frame_by_id, "home"), font=self.my_font, text="Back")
         self.back_button.grid(row=3, column=3, padx=20, pady=20, sticky="ew")
 
-
+# MARK: CreateCurveFrame
     def create_curve_frame(self, frame_id, raw_data, curve_parameters):
         # three string variable parameters, int32 output
         def mm_dd_yy_to_epoch(month, day, year):
@@ -537,7 +537,6 @@ class App(ctk.CTk):
             epoch_time = int(dt_object.timestamp())
 
             return epoch_time
-
         #returns three string variables
         def epoch_to_mm_dd_yy(epoch_time):
             # Convert epoch time to datetime object
@@ -555,7 +554,7 @@ class App(ctk.CTk):
             #datetime64[s]
             # Process csv file of data points
             data_file_name = "CSV_Files/" + data_file_name
-            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', np.int64), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
+            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
             print("date: ", "'{}'".format(date))
             oat = data['OAT']
@@ -582,10 +581,10 @@ class App(ctk.CTk):
             start_month, start_date, start_year = epoch_to_mm_dd_yy(date[0])
             end_month, end_date, end_year = epoch_to_mm_dd_yy(date[len(date) - 1])
             return start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off
-
+# MARK: ProcessIdealParams
         def process_ideal_curve_parameters(parameters_file_name):
         # Process parameter csv file of ideal curve
-            parameters_array = {} # array of length 8
+            parameters_dictionary = {} # dictionary of length 8
             parameters_file_name = "ParamFiles/" + parameters_file_name
             try:
                 with open(parameters_file_name, 'r') as file:
@@ -593,29 +592,20 @@ class App(ctk.CTk):
                     for row in reader:
                         if not row:
                             continue
-                        # Extract variable name and value
-                        variable_name, value = row
-                        # Remove any leading or trailing whitespace from the variable name
-                        variable_name = variable_name.strip()
-                        # Convert the value to an appropriate data type if needed
-                        if variable_name == 'Time':
-                            # If the variable represents time, keep it as a string
-                            parameters_array[variable_name] = value
-                        elif variable_name == 'Date':
-                            # If the variable represents a date, keep it as a string
-                            parameters_array[variable_name] = value
-                        elif variable_name == 'Sampling Rate':
-                            # If the variable represents a date, keep it as a string
-                            parameters_array[variable_name] = value
-                        else:
-                            try:
-                                parameters_array[variable_name] = float(value)
-                            except ValueError:
-                                print('Error in reading curve paramters')
+                        try:
+                            parameters_dictionary['M%OAT'] = float(row[0])
+                            parameters_dictionary['RAT'] = float(row[1])
+                            parameters_dictionary['LLLT'] = float(row[2])
+                            parameters_dictionary['HLLT'] = float(row[3])
+                            parameters_dictionary['MAT'] = float(row[4])
+                            parameters_dictionary['Sampling Rate'] = row[5]
+                        except ValueError:
+                            print("Error in reading curve parameters")
             except FileNotFoundError:
                 print(f"The file '{parameters_file_name}' does not exist.")
-            return parameters_array
+            return parameters_dictionary
 
+#MARK: PlotStandardized Settings
         def plot_standardized_settings(ax):
             # Label and Tweak Plot Design
             ax.set_title('Curve of ' + curve_parameters + ' and Raw Data of ' + raw_data, fontsize=6)
@@ -630,7 +620,7 @@ class App(ctk.CTk):
             width = 0.7
             height = 0.7
             ax.set_position([left, bottom, width, height])
-
+# MARK: DrawIdealCurve
         def draw_ideal_curve(ax, parameters):
             # Process parameters for ideal economizer curve
             min_oat = parameters["M%OAT"] #float
@@ -654,6 +644,7 @@ class App(ctk.CTk):
             # Plot ideal economizer curve
             ax.plot(oat_for_plot, mat_for_plot, color='#fa8b41')
 
+# MARK: Handle Date Range
         # ASSUMES THE RAW DATA FILE IS IN TIME ORDER
         def handle_date_range(m1, d1, y1, m2, d2, y2, parameters):
             if (m1 == '') & (d1 == '') & (y1 == '') & (m2 == '') & (d2 == '') & (y2 == ''):
@@ -695,6 +686,7 @@ class App(ctk.CTk):
                     off_end_index = i
                 break
             handle_plot("", oat_on, oat_off, mat_on, mat_off, parameters)
+# MARK:HandlePlot
 
         def handle_plot(called_from, oat_on, oat_off, mat_on, mat_off, parameters):
             ax.clear()
@@ -728,7 +720,7 @@ class App(ctk.CTk):
             plot_standardized_settings(ax)
             canvas.draw()
             canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
-
+#MARK: PlotMatplotlib
         def plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters):
 
             # Plot raw_data
@@ -744,10 +736,6 @@ class App(ctk.CTk):
             canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
 
             return canvas, fig, ax
-        
-        # example files; delete in main file
-        # raw_data = "Randomly Generated Data with motor.csv"
-        # curve_parameters = "example_curve_parameters.csv"
 
         start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off = process_data_points(raw_data)
         parameters_array = process_ideal_curve_parameters(curve_parameters)
@@ -763,21 +751,17 @@ class App(ctk.CTk):
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
 
         # Delete in main file
-        App.frames[frame_id].my_font = ctk.CTkFont(family="TkTextFont", size=15, weight="bold")
-        App.frames[frame_id].home_font = ctk.CTkFont(family="TkTextFont", size=30, weight="bold")
-        App.frames[frame_id].geometry(f"{1100}x{580}")
+        # App.frames[frame_id].my_font = ctk.CTkFont(family="TkTextFont", size=15, weight="bold")
+        # App.frames[frame_id].home_font = ctk.CTkFont(family="TkTextFont", size=30, weight="bold")
+        # App.frames[frame_id].geometry(f"{1100}x{580}")
         input_column_width = 350
-
-        # replace main_frame with App.frames[frame_id]
-        #replace root with self.
-        # place self. infront of commands
 
         # Create subframes for plot and widgets
         plot_frame = ctk.CTkFrame(App.frames[frame_id])
-        plot_frame.pack(side=ctk.LEFT, padx=10, pady=10, fill=ctk.BOTH, expand=False)
+        plot_frame.pack(side=ctk.LEFT, padx=10, pady=10, fill=ctk.BOTH, expand=True)
 
         widgets_frame = ctk.CTkFrame(App.frames[frame_id], width=input_column_width)
-        widgets_frame.pack(side=ctk.LEFT, padx=10, pady=10)
+        widgets_frame.pack(side=ctk.RIGHT, padx=10, pady=10, fill=ctk.BOTH)
 
         # Plot using matplotlib, moved down so it could consider toggles
         canvas, fig, ax = plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters_array)
@@ -791,16 +775,16 @@ class App(ctk.CTk):
         off_check = ctk.BooleanVar()
         off_check.set(True)
 
-        ideal_curve_toggle = ctk.CTkCheckBox(widgets_frame, text="Ideal Economizer Curve", font=self.my_font, variable=curve_check, command=lambda: self.handle_plot("curve", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        ideal_curve_toggle = ctk.CTkCheckBox(widgets_frame, text="Ideal Economizer Curve", font=self.my_font, variable=curve_check, command=partial(handle_plot, "curve", oat_on, oat_off, mat_on, mat_off, parameters_array))
         ideal_curve_toggle.grid(row=1, column=0, sticky='w', pady=5)
 
-        data_points_toggle = ctk.CTkCheckBox(widgets_frame, text="Data Points", font=self.my_font, variable=points_check, command=lambda: self.handle_plot("points", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        data_points_toggle = ctk.CTkCheckBox(widgets_frame, text="Data Points", font=self.my_font, variable=points_check, command=partial(handle_plot, "points", oat_on, oat_off, mat_on, mat_off, parameters_array))
         data_points_toggle.grid(row=2, column=0, sticky='w', pady=5)
 
-        motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor On", font=self.my_font, variable=on_check, command=lambda: self.handle_plot("on", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor On", font=self.my_font, variable=on_check, command=partial(handle_plot, "on", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_on_toggle.grid(row=3, column=0, sticky='w', padx=30, pady=5)
 
-        motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor Off", font=self.my_font, variable=off_check, command=lambda: self.handle_plot("off", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor Off", font=self.my_font, variable=off_check, command=partial(handle_plot, "off", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_off_toggle.grid(row=4, column=0, sticky='w', padx=30, pady=5)
 
         date_range_label = ctk.CTkLabel(widgets_frame, text="Date Range:", font=self.my_font)
@@ -808,6 +792,8 @@ class App(ctk.CTk):
 
         date_range_frame =ctk.CTkFrame(widgets_frame, width=input_column_width, bg_color=widgets_frame.cget("bg_color"), fg_color=widgets_frame.cget("fg_color"))
         date_range_frame.grid(row=6, column=0, sticky='ew', pady=5)
+
+
 
         placeholder_width = 2
         input_width = (input_column_width - placeholder_width) // 10
@@ -844,12 +830,15 @@ class App(ctk.CTk):
         self.year2_entry.grid(row=0, column=10, sticky='nse', padx=4, pady=5)
         self.year2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year2_entry))
 
-        submit_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Submit", corner_radius=4, width=1, command=lambda: self.handle_date_range(self.month1_entry.get(), self.date1_entry.get(), self.year1_entry.get(), 
+        submit_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Submit", corner_radius=4, width=1, command=lambda: handle_date_range(self.month1_entry.get(), self.date1_entry.get(), self.year1_entry.get(), 
                     self.month2_entry.get(), self.date2_entry.get(), self.year2_entry.get(), parameters_array)) 
         submit_button.grid(row=7, column=0, sticky='e', padx=4, pady=5)
 
         sampling_rate_label = ctk.CTkLabel(widgets_frame, text=f"Sampling Rate: {parameters_array['Sampling Rate']} min", font=self.my_font)
         sampling_rate_label.grid(row=8, column=0, sticky='w', pady=5)
+
+        return_home_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Return Home", corner_radius=4, width=1, command=partial(self.toggle_frame_by_id, "home"))
+        return_home_button.grid(row=9, column=0, columnspan= 5, sticky='ew', padx=30, pady=5)
 
     def InitFilterFiles(self):
         text = self.search_input.get()
@@ -904,9 +893,12 @@ class App(ctk.CTk):
         return files
     def GetAvailableDownloadedFiles(self):
         param_files = os.listdir("ParamFiles")
-        print("param_files: ", param_files)
         data_files = os.listdir("CSV_Files")
-        print("data_files: ", data_files)
+
+        for i in range(len(param_files)):
+            param_files[i] = param_files[i].split(".")[0]
+        for i in range(len(data_files)):
+            data_files[i] = data_files[i].split(".")[0]
         return data_files, param_files
         
 #MARK: SelectFiles
@@ -943,7 +935,8 @@ class App(ctk.CTk):
             return
         scrollable_files = self.scrollable_logger_files
         if (self.use_local_data):
-            selected_file_name = self.scrollable_local_files[self.selected_file].cbet("text")
+            selected_file_name = self.scrollable_local_files[self.selected_file].cget("text")
+            print("file selected: " + selected_file_name)
             # get data from the csv file? Or actually it seems that the curve frame takes care of tht
         else:
             selected_file_name = scrollable_files[self.selected_file].cget("text")
@@ -951,11 +944,23 @@ class App(ctk.CTk):
             # tell the arduino we're ready to receive data
             try:
                 self.date_data, self.oat_data, self.mat_data, self.motor_data = ReadAllData("-g={}.csv".format(selected_file_name), 115200)
+                parameters = CustomSerial("-x={}.params".format(selected_file_name), 115200)
+                sample_rate = CustomSerial("-f?", 115200)
+                if parameters == "ER2":
+                    print("This parameters file does not exist")
+                print("type of parameters", type(parameters))
+                params_file_name = 'Param'
+                with open('ParamFiles/{}.params'.format(selected_file_name), 'w', newline='') as param_file:
+                    file_writer = csv.writer(param_file, delimiter=',')
+                    parameters = parameters.split(",")
+                    parameters.append(sample_rate)
+                    file_writer.writerow(parameters)
+
             except:
                 print("Arduino Connection error")
         
         # need to change randomly generated data with motor to a paramter
-        parameter_files = "ParamFiles/" + selected_file_name + ".param"
+        parameter_files = selected_file_name + ".params"
         selected_file_name = selected_file_name + ".csv"
         self.create_curve_frame("curve", selected_file_name, parameter_files)
         self.toggle_frame_by_id("curve")

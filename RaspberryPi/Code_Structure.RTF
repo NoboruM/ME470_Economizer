@@ -1,0 +1,11 @@
+Create Curve Function:
+    - Process data points(raw_data)
+        - Read data from the CSV file
+        - Separate the data into two sets of motor on and motor off
+        - return start/end dates and data with on/off states
+    - Process Ideal Curve Params(curve_params file)
+        - Read the data from the .params file stored on RPi
+        - Parameters is a dictionary
+        - Assumes that the data is formatted as:
+            "name", data
+        - return parameters 
