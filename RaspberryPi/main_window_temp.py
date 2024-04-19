@@ -4,7 +4,7 @@ import customtkinter as ctk
 from functools import partial
 import os
 import serial
-import csv
+from csv import writer as CsvWriter
 from CTkPopupKeyboard import PopupKeyboard, PopupNumpad
 from PIL import Image
 from time import strftime, localtime, time, sleep
@@ -19,9 +19,8 @@ DARK_MODE = "dark"
 ctk.set_appearance_mode(DARK_MODE)
 ctk.set_default_color_theme("blue")
 
-#MARK: CustomSerial
 def CustomSerial(message, baud_rate):
-    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=1)
+    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
     ser.write("{}\r\n".format(message).encode())
     start_time = time()
     response = ser.readline().decode().strip()
@@ -32,50 +31,33 @@ def CustomSerial(message, baud_rate):
     ser.close()
     return response
 
-#MARK: ReadAllData
-def ReadAllData(message, baud_rate): # Randomly generated data with motor -> 17.219s without csv file read
-    try:
-        print("reading all data: ")
-        filename = "CSV_Files/{}".format(message[3:])
-
-        ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
-        print("{}\r\n".format(message))
-        initial_time = time()
-        response = CustomSerial(message, baud_rate)
-        print("response time: ", time() - initial_time)
+def CustomSerialContinuous(message, baud_rate):
+    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2)
+    print("{}\r\n".format(message))
+    response = CustomSerial(message, 115200)
+    response = ser.readline().decode().strip()
+    response = ser.readline().decode().strip()
+    start_time = time()
+    # print("initial response: ", response)
+    oat_data = []
+    mat_data = []
+    date_data = []
+    motor_data = []
+    while (time() - start_time) < 6:
         response = ser.readline().decode().strip()
-        response = ser.readline().decode().strip()
-        start_time = time()
-        # print("initial response: ", response)
-        oat_data = []
-        mat_data = []
-        date_data = []
-        motor_data = []
-        test_start = time()
-        with open(filename, 'w', newline='') as csv_file:
-            print("opened file")
-            csv_writer = csv.writer(csv_file, delimiter=',')
-
-            while (time() - start_time) < 2:
-                response = ser.readline().decode().strip()
-                if (response == "" or len(response.split(',')) < 4):
-                    continue
-                date, OAT, MAT, Motor_state = response.split(',')
-                # write data to CSV
-                csv_writer.writerow([date, OAT, MAT, Motor_state])
-                try:
-                    oat_data.append(float(OAT))
-                    mat_data.append(float(MAT))
-                    date_data.append(date)
-                    motor_data.append(bool(Motor_state))
-                except Exception as e:
-                    print('appending the data to the list caused: ', e)
-                start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
-        ser.close()
-        print("time elapsed: ", time() - test_start)
-    except Exception as e:
-        print('reading the data caused: ', e)
-        return [], [], [], []
+        if (response == "" or len(response.split(',')) < 4):
+            continue
+        date, OAT, MAT, Motor_state = response.split(',')
+        try:
+            print("oat: ", OAT)
+            oat_data.append(float(OAT))
+            mat_data.append(float(MAT))
+            date_data.append(date)
+            motor_data.append(bool(Motor_state))
+        except Exception as e:
+            print('appending the data to the list caused: ', e)
+        start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
+    ser.close()
     return date_data, oat_data, mat_data, motor_data
 
 # def CustomFileRead(message, baud_rate):
@@ -137,12 +119,11 @@ class App(ctk.CTk):
         self.mat_data = []
         self.date_data = []
         self.motor_data = []
-        self.use_local_data = True
         # create each of th e frames. Maybe set the first one to 
         self.create_input_frame("input")
         self.create_home_frame("home")
         self.create_download_frame("download")
-        # self.create_download_frame("curve")
+        self.create_download_frame("curve")
         
         # set the initial frame to display  
         App.current = App.frames["home"]
@@ -172,7 +153,7 @@ class App(ctk.CTk):
 
         lockout_temp_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Lockout Temp:")
         lockout_temp_label.grid(row=1, column=1,padx=10, pady=5, sticky="e")
-        self.lockout_temp_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.lockout_temp_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.lockout_temp_input.grid(row=1, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         lockout_temp_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         lockout_temp_unit_label.grid(row=1, column=7, padx=10, pady=5,sticky="nsw")
@@ -180,7 +161,7 @@ class App(ctk.CTk):
 
         min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp:")
         min_OAT_label.grid(row=2, column=1,padx=10, pady=5, sticky="e")
-        self.min_OAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.min_OAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.min_OAT_input.grid(row=2, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         min_OAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "%")
         min_OAT_unit_label.grid(row=2, column=7, padx=10, pady=5,sticky="nsw")
@@ -188,7 +169,7 @@ class App(ctk.CTk):
 
         RAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Estimated Return Air Temp:")
         RAT_label.grid(row=3, column=1,padx=10, pady=5, sticky="e")
-        self.RAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.RAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.RAT_input.grid(row=3, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         RAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         RAT_unit_label.grid(row=3, column=7, padx=10, pady=5,sticky="nsw")
@@ -197,7 +178,7 @@ class App(ctk.CTk):
 
         LL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Low Limit Lockout Temp:")
         LL_Lockout_label.grid(row=4, column=1,padx=10, pady=10, sticky="e")
-        self.LL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
+        self.LL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val)
         self.LL_Lockout_input.grid(row=4, column=2, columnspan=3, padx=10, pady=10, sticky="ew")
         LL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         LL_Lockout_unit_label.grid(row=4, column=7, padx=10, pady=5,sticky="nsw")
@@ -206,7 +187,7 @@ class App(ctk.CTk):
     
         HL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="High Limit Lockout Temp:")
         HL_Lockout_label.grid(row=5, column=1,padx=10, pady=5, sticky="e")
-        self.HL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.HL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.HL_Lockout_input.grid(row=5, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         HL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         HL_Lockout_unit_label.grid(row=5, column=7, padx=10, pady=5,sticky="nsw")
@@ -215,7 +196,7 @@ class App(ctk.CTk):
         #stopped here
         MAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Ideal Mixed Air Temp:")
         MAT_label.grid(row=6, column=1,padx=10, pady=5, sticky="e")
-        self.MAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.MAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.MAT_input.grid(row=6, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         MAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         MAT_unit_label.grid(row=6, column=7, padx=10, pady=5,sticky="nsw")
@@ -224,7 +205,7 @@ class App(ctk.CTk):
 
         SR_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Sampling Rate:")
         SR_label.grid(row=7, column=1,padx=10, pady=5, sticky="e")
-        self.SR_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width)
+        self.SR_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width)
         self.SR_input.grid(row=7, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         SR_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "min")
         SR_unit_label.grid(row=7, column=7, padx=10, pady=5,sticky="nsw")
@@ -232,11 +213,11 @@ class App(ctk.CTk):
 
         time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Current Time:")
         time_label.grid(row=8, column=1,padx=10, pady=5, sticky="e")
-        self.time_input1 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width//3)
+        self.time_input1 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//3)
         self.time_input1.grid(row=8, column=2, columnspan=2, padx=(10,0), pady=5, sticky="nsw")
         time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text=":", text_color="#fff")
         time_label.grid(row=8, column=4,padx=0, pady=5, sticky="ew")
-        self.time_input2 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width//3)
+        self.time_input2 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//3)
         self.time_input2.grid(row=8, column=5, columnspan=2, padx=(0,10), pady=5, sticky="nsw")
         time_unit_label = ctk.CTkOptionMenu(App.frames[frame_id], values=["AM", "PM"], fg_color=self.bg)
         time_unit_label.grid(row=8, column=7, padx=10, pady=5,sticky="nsw")        
@@ -245,16 +226,16 @@ class App(ctk.CTk):
 
         date_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Date:")
         date_label.grid(row=9, column=1,padx=10, pady=5, sticky="e")
-        self.month_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width//4)
+        self.month_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//4)
         self.month_input.grid(row=9, column=2, columnspan=1, padx=(10, 0), pady=5, sticky="nsw")
 
         slash_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="/", text_color="#fff")
         slash_label.grid(row=9, column=3,padx=0, pady=5, sticky="ew")
-        self.day_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width//4)
+        self.day_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//4)
         self.day_input.grid(row=9, column=4, columnspan=1, padx=0, pady=5, sticky="nsw")
         slash_label_2 = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="/", text_color="#fff")
         slash_label_2.grid(row=9, column=5,padx=0, pady=5, sticky="ew")
-        self.year_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", width=input_column_width//4)
+        self.year_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key", validatecommand=num_val, width=input_column_width//4)
         self.year_input.grid(row=9, column=6, columnspan=1, padx=0, pady=5, sticky="nsw")
         date_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "Month/Day/Year")
         date_unit_label.grid(row=9, column=7, padx=10, pady=5,sticky="nsw")
@@ -274,7 +255,6 @@ class App(ctk.CTk):
         self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=partial(self.toggle_frame_by_id, "home"), font=self.my_font, text="Cancel", corner_radius=50)
         self.cancel_button.grid(row=10, column=8, padx=20, pady=20, sticky="ew")
 
-# MARK: HandleCurveParams
     def handle_parameters_for_curve_view(self, frame):
         self.system_name = self.system_name_input.get()
         numerical_inputs = []
@@ -344,7 +324,6 @@ class App(ctk.CTk):
             canvas.draw()
             canvas.get_tk_widget().pack()
 
-#MARK: HandleInstallInputs
     #STORE INTO CSV FILE????
     def handle_install_inputs(self):
         self.system_name = self.system_name_input.get()
@@ -385,23 +364,27 @@ class App(ctk.CTk):
             self.month = self.month_input.get()
             self.day = self.day_input.get()
             self.year = self.year_input.get()
-            date_string = datetime.datetime(int(self.year), int(self.month), int(self.day), int(self.hours), int(self.minutes)) 
+            #tz = pytz.timezone("US/Central")
+            #date_string = datetime.datetime(int(self.year), int(self.month), int(self.day), int(self.hours), int(self.minutes)) 
+            #corrected_date = tz.localize(date_string)
+            #print("date: ", date_string)
+            #epoch_date = calendar.timegm(corrected_date.timetuple())
+            #print("epoch_date: ", epoch_date)
             
             # send data to the arduino:
             self.SendInstallationInputs()
 
-            # store in CSV file
-            parameters = [self.min_OAT,self.RAT,self.LL_Lockout,self.HL_Lockout,self.MAT, self.SR]
-            print(parameters)
-            file_store = "ParamFiles/" + self.system_name + ".param"
-            with open(file_store, 'w', newline='') as new_file:
-               csv_writer = csv.writer(new_file) # create the new file or start writing to existing file
-               csv_writer.writerow(parameters) # Write first row as the user parameters
+            # store in CSV file?
+            # TODO: Determine if necessary
+            #parameters = "M%OA," + self.min_OAT + "\nRAT," + self.RAT + "\nLLT," + self.LL_Lockout + "\nHLT," + self.HL_Lockout + "\niMAT," + self.MAT + "\nSR," + self.SR
+            #print(parameters)
+            #with open(system_name + ".csv", 'w', newline='') as new_file:
+            #    csv_writer = CsvWriter(new_file) # create the new file or start writing to existing file
+            #    csv_writer.writerow(parameters) # Write first row as the user parameters
             # TODO: add the date
             # at end if everything is good, move to last page
-            self.create_end_frame("logging")
-            self.toggle_frame_by_id("logging")
-#MARK:SendInstallInputs
+            self.toggle_frame_by_id("download")
+
     def SendInstallationInputs(self):
         response = CustomSerial("-p?\r\n", 115200)
         print("response: ", response)
@@ -412,21 +395,21 @@ class App(ctk.CTk):
         # epoch_date = calendar.timegm(epoch_date.timetuple())
         epoch_date = 0
         print("epoch_date: ", epoch_date)
-        filename = self.system_name + '.param'
-        response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the recording filename
+        response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the system name
         response = CustomSerial("-t={}\r\n".format(epoch_date), 115200) # set date/time
-        response = CustomSerial("-p={},{},{},{},{},{}\r\n".format(filename, self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 115200) #params in order of M%OA,RAT,LLT,HLT,iMAT
+        response = CustomSerial("-p={},{},{},{},{}\r\n".format(self.min_OAT, self.RAT, self.LL_Lockout, self.HL_Lockout, self.MAT), 115200) #params in order of M%OA,RAT,LLT,HLT,iMAT
         response = CustomSerial("-f={}\r\n".format(self.SR), 115200) # set sample rate
         print("Sample rate: ", CustomSerial("-f?", 115200))
 
         response = CustomSerial("-s=1\r\n", 115200) # start recording
+
     def Num_Validation(self, input): 
         if input.isdigit(): 
             return True                
         if input == "": 
             return True
         return False
-#MARK: HomeFrame            
+            
     def create_home_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Home")
@@ -446,10 +429,10 @@ class App(ctk.CTk):
         button1 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Installation: Set Parameters for New System",  command=partial(self.toggle_frame_by_id, "input"))
         button1.grid(row=1, column=0, padx=20, pady=20, sticky="nsw")
     
-        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data", command=partial(self.DetermineDownloadSource, "View Downloaded Data"))
+        button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data", command=partial(self.toggle_frame_by_id, "download"))
         button2.grid(row=2, column=0, padx=20, pady=20, sticky="nsw")
 
-        button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Select Existing System", command=partial(self.DetermineDownloadSource, "View Downloaded Data"))
+        button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Select Existing System", command=partial(self.toggle_frame_by_id, "download"))
         button4.grid(row=4, column=0, padx=60, pady=20, sticky="nsw")
         button4.grid_forget()
 
@@ -457,10 +440,9 @@ class App(ctk.CTk):
         button5.grid(row=5, column=0, padx=60, pady=20, sticky="nsw")
         button5.grid_forget() 
 
-        # button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_home_buttons(App.frames[frame_id], button3, button4, button5))
-        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=partial(self.DetermineDownloadSource, "Download Data"))
+        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_home_buttons(App.frames[frame_id], button3, button4, button5))
         button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
-#MARK: ShowExtraHomeBut
+
     def show_additional_home_buttons(self, frame, main_button, button1, button2):
         if getattr(main_button, "additional_buttons_shown", False):
             main_button.configure(fg_color="#3668A0")
@@ -477,7 +459,7 @@ class App(ctk.CTk):
 
             # Update the attribute to indicate that the additional buttons are shown
             main_button.additional_buttons_shown = True
-#MARK: CreateDownloadFrame
+
     def create_download_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Download Data")
@@ -493,29 +475,21 @@ class App(ctk.CTk):
         self.search_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ")
         self.search_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="w")
 
+        #self.new_download_button = ctk.CTkButton(App.frames[frame_id], text="Download New System")
+        #self.new_download_button.grid(row=0, column=3, padx=10, pady=10, sticky="ew")
+
         # create scrollable frame
         self.scrollable_frame = ctk.CTkScrollableFrame(App.frames[frame_id])
         self.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
-        # self.scrollable_frame_files = []
-        self.scrollable_logger_files = []
-        self.scrollable_local_files = []
+        self.scrollable_frame_files = []
         self.selected_file = None
-        self.logger_file_names = self.GetAvailableArduinoFiles()
-        self.local_data_file_names, self.local_param_file_names = self.GetAvailableDownloadedFiles()
-
-        for i, file in enumerate(self.logger_file_names):
+        self.file_names = self.GetAvailableFiles()
+        for i, file in enumerate(self.file_names):
             button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", fg_color="#39334f", command=partial(self.FileSelection, file))
             button.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
-            # self.scrollable_frame_files.append(button)
-            self.scrollable_logger_files.append(button)
+            self.scrollable_frame_files.append(button)
 
-        for i, file in enumerate(self.local_data_file_names):
-            button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", fg_color="#39334f", command=partial(self.FileSelection, file))
-            button.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
-            # self.scrollable_frame_files.append(button)
-            self.scrollable_local_files.append(button)
-        self.InitFilterFiles()
         self.search_input.bind("<KeyRelease>", self.FilterFiles)
         self.error_info_label = ctk.CTkLabel(App.frames[frame_id], text = "")
         self.error_info_label.grid(row=2, column=1, columnspan=2, pady=0)
@@ -541,7 +515,6 @@ class App(ctk.CTk):
         #returns three string variables
         def epoch_to_mm_dd_yy(epoch_time):
             # Convert epoch time to datetime object
-            print("epoch time: ", "'{}'".format(epoch_time))
             dt_object = datetime.datetime.fromtimestamp(epoch_time)
 
             # Extract month, day, and year
@@ -554,10 +527,8 @@ class App(ctk.CTk):
         def process_data_points(data_file_name):
             #datetime64[s]
             # Process csv file of data points
-            data_file_name = "CSV_Files/" + data_file_name
-            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', np.int64), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
+            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', 'int32'), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
-            print("date: ", "'{}'".format(date))
             oat = data['OAT']
             mat = data['MAT']
             motor = data['Motor_State']
@@ -586,7 +557,6 @@ class App(ctk.CTk):
         def process_ideal_curve_parameters(parameters_file_name):
         # Process parameter csv file of ideal curve
             parameters_array = {} # array of length 8
-            parameters_file_name = "ParamFiles/" + parameters_file_name
             try:
                 with open(parameters_file_name, 'r') as file:
                     reader = csv.reader(file)
@@ -813,34 +783,34 @@ class App(ctk.CTk):
         input_width = (input_column_width - placeholder_width) // 10
 
         #color boxes red if input is invalid
-        self.month1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_month, validate="key", width=input_width)
+        self.month1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_month, validate="key", validatecommand=num_val, width=input_width)
         self.month1_entry.grid(row=0, column=0, sticky='ew', padx = 4, pady=5)
         self.month1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.month1_entry))
         slash_label_1 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
         slash_label_1.grid(row=0, column=1, sticky="nsw")
-        self.date1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_date, validate="key", width=input_width) 
+        self.date1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_date, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
         self.date1_entry.grid(row=0, column=2, sticky='nsw', pady=5)
         self.date1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.date1_entry))
         slash_label_2 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
         slash_label_2.grid(row=0, column=3, sticky="nsw")
-        self.year1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_year, validate="key", width=input_width) 
+        self.year1_entry = ctk.CTkEntry(date_range_frame, placeholder_text=start_year, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
         self.year1_entry.grid(row=0, column=4, sticky='nsw', pady=5)
         self.year1_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year1_entry))
 
         to_label = ctk.CTkLabel(date_range_frame, text=" to ")
         to_label.grid(row=0, column=5, sticky='w', pady=5)
 
-        self.month2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_month, validate="key", width=input_width) 
+        self.month2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_month, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
         self.month2_entry.grid(row=0, column=6, sticky='nsw', pady=5)
         self.month2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.month2_entry))
         slash_label_3 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
         slash_label_3.grid(row=0, column=7, sticky="nsw")
-        self.date2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_date, validate="key", width=input_width) 
+        self.date2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_date, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
         self.date2_entry.grid(row=0, column=8, sticky='nsw', pady=5)
         self.date2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.date2_entry))
         slash_label_4 = ctk.CTkLabel(date_range_frame, font=self.my_font, text="/", text_color="#fff")
         slash_label_4.grid(row=0, column=9, sticky="nsw")
-        self.year2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_year, validate="key", width=input_width) 
+        self.year2_entry = ctk.CTkEntry(date_range_frame, placeholder_text=end_year, validate="key", validatecommand=num_val, width=input_width) #validatecommand=num_val, 
         self.year2_entry.grid(row=0, column=10, sticky='nse', padx=4, pady=5)
         self.year2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year2_entry))
 
@@ -851,32 +821,10 @@ class App(ctk.CTk):
         sampling_rate_label = ctk.CTkLabel(widgets_frame, text=f"Sampling Rate: {parameters_array['Sampling Rate']} min", font=self.my_font)
         sampling_rate_label.grid(row=8, column=0, sticky='w', pady=5)
 
-    def InitFilterFiles(self):
-        text = self.search_input.get()
-        self.filtered_frame_files = []
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            scrollable_files = self.scrollable_local_files
-            for file in self.scrollable_logger_files:
-                file.grid_forget()
-        else:
-            for file in self.scrollable_local_files:
-                file.grid_forget()
-        for i, file in enumerate(scrollable_files):
-            file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
-#MARK: FilterFiles
     def FilterFiles(self, event):
         text = self.search_input.get()
         self.filtered_frame_files = []
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            scrollable_files = self.scrollable_local_files
-            for file in self.scrollable_logger_files:
-                file.grid_forget()
-        else:
-            for file in self.scrollable_local_files:
-                file.grid_forget()
-        for file in scrollable_files:
+        for file in self.scrollable_frame_files:
             if file.cget("text").startswith(text):
                 self.filtered_frame_files.append(file)
             else:
@@ -884,9 +832,8 @@ class App(ctk.CTk):
         for i, file in enumerate(self.filtered_frame_files):
             file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
         # reset the colors? Seems like a bit extra
-
-#MARK: GetAvailableArduinoFiles  
-    def GetAvailableArduinoFiles(self):
+            
+    def GetAvailableFiles(self):
         print("Getting files")
         files = []
         try:
@@ -902,31 +849,21 @@ class App(ctk.CTk):
         except serial.SerialException as e:
             print("Serial connection failed")
         return files
-    def GetAvailableDownloadedFiles(self):
-        param_files = os.listdir("ParamFiles")
-        print("param_files: ", param_files)
-        data_files = os.listdir("CSV_Files")
-        print("data_files: ", data_files)
-        return data_files, param_files
-        
-#MARK: SelectFiles
+# MARK: FileSelection
     def FileSelection(self, file_name):
         self.error_info_label.configure(text="", )
         curr_input = self.search_input.get()
         self.search_input.delete(0,len(curr_input))
         self.search_input.insert(0, file_name)
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            scrollable_files = self.scrollable_local_files
         # change the color of the button to be slightly greyed out
         # reset the colors of all of the other buttons
-        for i in range(len(scrollable_files)):
-            text = scrollable_files[i].cget("text")
+        for i in range(len(self.scrollable_frame_files)):
+            text = self.scrollable_frame_files[i].cget("text")
             if (text == file_name):
                 self.selected_file = i
-                scrollable_files[i].configure(fg_color="#635888")
+                self.scrollable_frame_files[i].configure(fg_color="#635888")
             else:
-                scrollable_files[i].configure(fg_color="#39334f")
+                self.scrollable_frame_files[i].configure(fg_color="#39334f")
 
     def KeyboardCallback(self, event):
         self.keyboard= PopupKeyboard(self.system_name_input, x=100, y=200)
@@ -941,23 +878,31 @@ class App(ctk.CTk):
         if self.selected_file is None:
             self.error_info_label.configure(text="*No File Selected", )
             return
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            selected_file_name = self.scrollable_local_files[self.selected_file].cbet("text")
-            # get data from the csv file? Or actually it seems that the curve frame takes care of tht
-        else:
-            selected_file_name = scrollable_files[self.selected_file].cget("text")
-            print("file selected: " + selected_file_name)
-            # tell the arduino we're ready to receive data
-            try:
-                self.date_data, self.oat_data, self.mat_data, self.motor_data = ReadAllData("-g={}.csv".format(selected_file_name), 115200)
-            except:
-                print("Arduino Connection error")
+        selected_file_name = self.scrollable_frame_files[self.selected_file].cget("text")
+        print("file selected: " + selected_file_name)
+
+        # doesnt_match = False
+        # if doesnt_match:
+        #     self.toplevel_window = ToplevelWindow(self, "WARNING", "File does not match this data logger. \nContinuing will overwrite this file")
+        #     self.continue_button = ctk.CTkButton(self.toplevel_window, text="Continue")
+        #     self.continue_button.grid(row=1, column=0, padx=10, pady=10)
+        #     self.cancel_button = ctk.CTkButton(self.toplevel_window, text="Cancel", command=self.DestroyTopLevel)
+        #     self.cancel_button.grid(row=1, column=1, padx=10, pady=10)
+        #     return
+
+        # self.downloading_pop_up = ToplevelWindow(self, "Loading", "")
+        # sleep(1)
+        # tell the arduino we're ready to receive data
+        try:
+            self.date_data, self.oat_data, self.mat_data, self.motor_data = CustomSerialContinuous("-g={}.csv".format(selected_file_name), 115200)
+            print("download data response: ", date_data)
+        except:
+            print("Arduino Connection error")
         
+        # wait for response
         # need to change randomly generated data with motor to a paramter
-        parameter_files = "ParamFiles/" + selected_file_name + ".param"
-        selected_file_name = selected_file_name + ".csv"
-        self.create_curve_frame("curve", selected_file_name, parameter_files)
+        self.create_curve_frame("curve", selected_file_name, "Randomly Generated Data with motor.csv")
+
         self.toggle_frame_by_id("curve")
         #with open(system_name + ".csv", 'w', newline='') as new_file:
         #    csv_writer = CsvWriter(new_file) # create the new file or start writing to existing file
@@ -989,32 +934,6 @@ class App(ctk.CTk):
     def DestroyTopLevel(self):
         self.toplevel_window.destroy()
         self.search_input.focus() # to prevent keyboard from previous window from popping up randomly. Idk why
-
-# MARK: End_Frame
-    def create_end_frame(self, frame_id):
-        App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
-        self.title("Home")
-    
-        # configure the grid, but doesn't set size. I think if you keep adding stuff it works
-        App.frames[frame_id].grid_columnconfigure((0, 1), weight=1)
-        App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=0, minsize=90)
-
-
-        home_label = ctk.CTkLabel(App.frames[frame_id], text="Data Logging Has Begun", font=self.home_font)
-        home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
-
-        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Return Home",  command=partial(self.toggle_frame_by_id,"home"))
-        button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
-
-    def DetermineDownloadSource(self, button_pressed):
-        if button_pressed == "View Downloaded Data":
-            self.use_local_data = True
-        elif button_pressed == "Download Data":
-            self.use_local_data = False
-        else:
-            print("Incorrect message for downloading data")
-        self.InitFilterFiles()
-        self.toggle_frame_by_id("download")
 
 # MARK:toggleFrame
     def toggle_frame_by_id(self, frame_id):
