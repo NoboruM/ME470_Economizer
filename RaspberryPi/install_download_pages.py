@@ -866,7 +866,7 @@ class App(ctk.CTk):
             for file in self.scrollable_local_files:
                 file.grid_forget()
         for file in scrollable_files:
-            if file.cget("text").startswith(text):
+            if file.cget("text").lower().startswith(text.lower()):
                 self.filtered_frame_files.append(file)
             else:
                 file.grid_forget()
@@ -964,32 +964,6 @@ class App(ctk.CTk):
         selected_file_name = selected_file_name + ".csv"
         self.create_curve_frame("curve", selected_file_name, parameter_files)
         self.toggle_frame_by_id("curve")
-        #with open(system_name + ".csv", 'w', newline='') as new_file:
-        #    csv_writer = CsvWriter(new_file) # create the new file or start writing to existing file
-        #    csv_writer.writerow(params) # Write first row as the user parameters
-        #    # start downloading the data
-        #    while True: # uh... how to know when to stop?
-        #        # Read data from serial port
-        #        data = ser.readline().decode().strip()
-        #        print(data)
-                
-        #        if (len(data.split(',')) < 5):
-        #            print(data)
-        #            print('not enough data')
-        #            continue    
-        #        # write to the CSV file
-        #        csv_writer.writerow(data)
-
-        #        # Split the received data into x and y values
-        #        date, oat, mat, time, motor = data.split(',')
-                
-        #        # Append data points to lists
-        #        self.oat_data.append(float(oat[:-2]))
-        #        self.mat_data.append(float(mat))
-        #        self.date_data.append(date)
-        #        self.time_data.append(time)
-        #        self.motor_data.append(bool(motor))
-            
         
     def DestroyTopLevel(self):
         self.toplevel_window.destroy()
