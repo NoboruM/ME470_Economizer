@@ -11,7 +11,7 @@ class PopupNumpad(CTkToplevel):
     
     def __init__(self, attach, x=None, y=None, keycolor=None,
                  fg_color=None, keyheight: int = 50, keywidth: int = 50,
-                 alpha: float = 0.85, corner=20, point=True, **kwargs):
+                 alpha: float = 1, corner=20, point=True, **kwargs):
         
         super().__init__(takefocus=1)
         
@@ -61,17 +61,21 @@ class PopupNumpad(CTkToplevel):
         self.row5.grid(row=5, column=0, pady=(0,10))
     
         self._init_keys(**kwargs)
-    
+
         # hide/show PopupNumpad
         self.attach.bind('<Key>', lambda e: self.withdraw() if not self.disable else None, add="+")
         self.attach.bind('<FocusIn>', lambda e: self._iconify(), add="+")
-        self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
+        self.attach.bind('<Leave>', lambda e: self.withdraw() if not self.dsable else None, add='+')
+        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
+        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
+        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
         
         self.update_idletasks()
         self.x = x
         self.y = y
         self._iconify()
         self.attributes('-alpha', alpha)
+        self.attributes("-topmost", True)
         
     def _init_keys(self, **kwargs):
         self.keys = {
@@ -142,12 +146,19 @@ class PopupNumpad(CTkToplevel):
             self.hide = False
             
     def destroy_popup(self):
+        print("destroying numpad")
         self.destroy()
         self.disable = True
+    
         
     def _iconify(self):
-        if self.disable: return
+        print("in the _iconify function")
+        print("attach: ", self.attach)
+        if self.disable: 
+            print("keyboard disabled")
+            return
         if self.hide:
+            print("self.hide is true")
             self.deiconify()
             self.focus()
             self.hide = False
