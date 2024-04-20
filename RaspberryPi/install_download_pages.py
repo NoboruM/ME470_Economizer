@@ -176,7 +176,7 @@ class App(ctk.CTk):
         self.lockout_temp_input.grid(row=1, column=2, columnspan=5, padx=10, pady=5, sticky="nsw")
         lockout_temp_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
         lockout_temp_unit_label.grid(row=1, column=7, padx=10, pady=5,sticky="nsw")
-        self.lockout_temp_input.bind("<1>", self.NumKeyboardCallback(self.lockout_temp_input))
+        self.lockout_temp_input.bind("<1>", self.NumKeyboardCallback(self.lockout_temp_input), add="+")
 
         min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp:")
         min_OAT_label.grid(row=2, column=1,padx=10, pady=5, sticky="e")
@@ -492,7 +492,7 @@ class App(ctk.CTk):
         search_label.grid(row=0, column=0,padx=10, pady=10, sticky="w")
         self.search_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", height=35, font=self.my_font)
         self.search_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="nsew")
-        self.search_input.bind("<1>", self.KeyboardCallback(self.search_input), add='+')
+        self.search_input.bind("<FocusIn>", self.KeyboardCallback(self.search_input), add='+')
 
         # create scrollable frame
         self.scrollable_frame = ctk.CTkScrollableFrame(App.frames[frame_id], height=350)
