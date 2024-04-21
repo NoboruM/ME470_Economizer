@@ -74,13 +74,13 @@ class PopupKeyboard(CTkToplevel):
         
         # hide/show PopupKeyboard
         self.attach.bind('<Key>', lambda e: self.withdraw() if not self.disable else None, add="+")
-        self.attach.bind('<FocusIn>', lambda e: self._iconify(), add="+")
+        self.attach.bind('<ButtonRelease>', lambda e: self._iconify(), add="+")
         self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
         
         self.update_idletasks()
         self.x = x
         self.y = y
-        self._iconify()
+        self.init_iconify()
         self.attributes('-alpha', alpha)
         
     def _init_keys(self, **kwargs):
@@ -269,6 +269,21 @@ class PopupKeyboard(CTkToplevel):
         self.disable = True
         
     def _iconify(self):
+        if self.disable: return
+        if self.hide:
+            self.deiconify()
+            self.focus()
+            # self.hide = False
+            self.x_pos =  self.attach.winfo_rootx() if self.x is None else self.x
+            self.y_pos = self.attach.winfo_rooty() + self.attach.winfo_reqheight() + 5 if self.y is None else self.y
+            self.geometry('{}x{}+{}+{}'.format(self.frame.winfo_reqwidth(),
+                                               self.frame.winfo_reqheight(),
+                                               self.x_pos,self.y_pos))
+        else:
+            self.withdraw()
+            self.hide = True
+
+    def init_iconify(self):
         if self.disable: return
         if self.hide:
             self.deiconify()

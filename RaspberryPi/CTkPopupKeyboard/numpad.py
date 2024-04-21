@@ -64,19 +64,14 @@ class PopupNumpad(CTkToplevel):
 
         # hide/show PopupNumpad
         self.attach.bind('<Key>', lambda e: self.withdraw() if not self.disable else None, add="+")
-        self.attach.bind('<FocusIn>', lambda e: self._iconify(), add="+")
-        self.attach.bind('<1>', lambda e: self._iconify_2(), add="+")
+        self.attach.bind('<ButtonRelease>', lambda e: self._iconify(), add="+")
         self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add='+')
-        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
-        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
-        # self.bind('<FocusOut>', lambda e: self.withdraw() if not self.disable else None, add="+")
-        
+
         self.update_idletasks()
         self.x = x
         self.y = y
-        self._iconify()
+        self.init_iconify()
         self.attributes('-alpha', alpha)
-        self.attributes("-topmost", True)
         
     def _init_keys(self, **kwargs):
         self.keys = {
@@ -147,39 +142,29 @@ class PopupNumpad(CTkToplevel):
             self.hide = False
             
     def destroy_popup(self):
-        print("destroying numpad")
         self.destroy()
         self.disable = True
     
         
     def _iconify(self):
-        print("in the _iconify function")
-        print("attach: ", self.attach)
         if self.disable: 
-            print("keyboard disabled")
             return
         if self.hide:
-            print("self.hide is true")
             self.deiconify()
             self.focus()
-            self.hide = False
+            # self.hide = False
             self.x_pos =  self.attach.winfo_rootx() if self.x is None else self.x
             self.y_pos = self.attach.winfo_rooty() + self.attach.winfo_reqheight() + 5 if self.y is None else self.y
             self.geometry('{}x{}+{}+{}'.format(self.frame.winfo_reqwidth(),
                                                self.frame.winfo_reqheight(),
                                                self.x_pos,self.y_pos))
         else:
-            print("self.hid is false")
             self.withdraw()
             self.hide = True
-    def _iconify_2(self):
-        print("in the _iconify_2 function")
-        print("2 attach: ", self.attach)
+    def init_iconify(self):
         if self.disable: 
-            print("2 keyboard disabled")
             return
         if self.hide:
-            print("2 self.hide is true")
             self.deiconify()
             self.focus()
             self.hide = False
@@ -189,7 +174,6 @@ class PopupNumpad(CTkToplevel):
                                                 self.frame.winfo_reqheight(),
                                                 self.x_pos,self.y_pos))
         else:
-            print("2 self.hid is false")
             self.withdraw()
             self.hide = True
         
