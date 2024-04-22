@@ -8,7 +8,6 @@ import csv
 from PIL import Image
 from time import strftime, localtime, time, sleep
 import datetime
-import calendar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
