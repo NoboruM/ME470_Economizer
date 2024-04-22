@@ -10,7 +10,6 @@ from PIL import Image
 from time import strftime, localtime, time, sleep
 import datetime
 import calendar
-#import pytz
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
@@ -31,30 +30,6 @@ def CustomSerial(message, baud_rate):
         # print("response: '{}'".format(response))
     ser.close()
     return response
-
-# def CustomFileRead(message, baud_rate):
-#     response = /s
-#     start_time = time()
-#     oat_data = []
-#     mat_data = []
-#     date_data = []
-#     motor_data = []
-#     while (time() - start_time) < 6 or response == "":
-#         # ser.write(b"message\r\n") # shouldn't need this
-#         response = ser.readline().decode().strip()
-#         if (len(response.split(',')) < 4):
-#             print("not enough data: ", data)
-#             continue
-#         date, OAT, MAT, Motor_state = response.split(',')
-#         oat_data.append(float(oat[:-2]))
-#         mat_data.append(float(mat))
-#         date_data.append(date)
-#         motor_data.append(bool(motor))
-
-#         start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
-
-#     return date_data, oat_data, mat_data, motor_data
-
 
 class ToplevelWindow(ctk.CTkToplevel):
     def __init__(self, title_, text_,*args, **kwargs):
@@ -81,12 +56,14 @@ class App(ctk.CTk):
 
         # screen size
         self.geometry(f"{1100}x{580}")
+        self.wm_attributes('-fullscreen', True)
+        self.state('normal')
         self.my_font = ctk.CTkFont(family="TkTextFont", size=15, weight="bold")
         self.home_font = ctk.CTkFont(family="TkTextFont", size=30, weight="bold")
 
         # root!
         self.main_container = ctk.CTkFrame(self, corner_radius=8, fg_color=self.bg)
-        self.main_container.pack(fill=tkinter.BOTH, expand=True, padx=8, pady=8)
+        self.main_container.pack(fill=tkinter.BOTH, expand=True, padx=2, pady=2)
         self.oat_data = []
         self.mat_data = []
         self.date_data = []
@@ -111,121 +88,131 @@ class App(ctk.CTk):
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
    
         # configure the grid, but doesn't set size. I think if you keep adding stuff it works
-        App.frames[frame_id].grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1)
+        App.frames[frame_id].grid_columnconfigure((1, 2, 3), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
         # first row is the system name, which has text and user input ->  2 columns
-        system_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="New System Name:", width=150)
+        system_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="New System Name:", width=200)
         system_label.grid(row=0, column = 0, padx=10, pady=10, sticky="nsew")
-        self.system_name_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text="Enter System Name", font=self.my_font)
-        self.system_name_input.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
-        self.system_name_input.bind("<FocusIn>", self.KeyboardCallback(self.system_name_input, 100, 200))
+        self.system_name_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text="Enter System Name", font=self.my_font, height=40)
+        self.system_name_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.system_name_input.bind("<FocusIn>", self.KeyboardCallback(self.system_name_input, 25, 200))
 
         # # next section is 4 columns, 9 rows
-        input_column_width = 150
+        Label_column_width = 600
         set_inputs_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Inputs:")
         set_inputs_label.grid(row=1, column=0,padx=10, pady=5, sticky="nsew")
 
-        min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp:")
+        min_OAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Min % Outside Air Temp:", width=Label_column_width)
         min_OAT_label.grid(row=1, column=1,padx=10, pady=5, sticky="e")
         self.min_OAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.min_OAT_input.grid(row=1, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.min_OAT_input.grid(row=1, column=2, padx=10, pady=5, sticky="nsew")
         min_OAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "%")
-        min_OAT_unit_label.grid(row=1, column=9, padx=10, pady=5,sticky="nsw")
-        self.min_OAT_input.bind("<1>", self.NumKeyboardCallback(self.min_OAT_input, 750, 200))
+        min_OAT_unit_label.grid(row=1, column=3, padx=10, pady=5,sticky="nsw")
+        self.min_OAT_input.bind("<1>", self.NumKeyboardCallback(self.min_OAT_input, 750, 50))
 
-        RAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Estimated Return Air Temp:")
+        RAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Estimated Return Air Temp:", width=Label_column_width)
         RAT_label.grid(row=2, column=1,padx=10, pady=5, sticky="e")
         self.RAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.RAT_input.grid(row=2, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.RAT_input.grid(row=2, column=2, padx=10, pady=5, sticky="nsew")
         RAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
-        RAT_unit_label.grid(row=2, column=9, padx=10, pady=5,sticky="nsw")
-        self.RAT_input.bind("<1>", self.NumKeyboardCallback(self.RAT_input, 750, 200))
+        RAT_unit_label.grid(row=2, column=3, padx=10, pady=5,sticky="nsw")
+        self.RAT_input.bind("<1>", self.NumKeyboardCallback(self.RAT_input, 750, 50))
 
 
-        LL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Low Limit Lockout Temp:")
+        LL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Low Limit Lockout Temp:", width=Label_column_width)
         LL_Lockout_label.grid(row=3, column=1,padx=10, pady=5, sticky="e")
         self.LL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.LL_Lockout_input.grid(row=3, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.LL_Lockout_input.grid(row=3, column=2, padx=10, pady=5, sticky="nsew")
         LL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
-        LL_Lockout_unit_label.grid(row=3, column=9, padx=10, pady=5,sticky="nsw")
-        self.LL_Lockout_input.bind("<1>", self.NumKeyboardCallback(self.LL_Lockout_input, 750, 200))
+        LL_Lockout_unit_label.grid(row=3, column=3, padx=10, pady=5,sticky="nsw")
+        self.LL_Lockout_input.bind("<1>", self.NumKeyboardCallback(self.LL_Lockout_input, 750, 50))
 
     
-        HL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="High Limit Lockout Temp:")
+        HL_Lockout_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="High Limit Lockout Temp:", width=Label_column_width)
         HL_Lockout_label.grid(row=4, column=1,padx=10, pady=5, sticky="e")
         self.HL_Lockout_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.HL_Lockout_input.grid(row=4, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.HL_Lockout_input.grid(row=4, column=2, padx=10, pady=5, sticky="nsew")
         HL_Lockout_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
-        HL_Lockout_unit_label.grid(row=4, column=9, padx=10, pady=5,sticky="nsw")
-        self.HL_Lockout_input.bind("<1>", self.NumKeyboardCallback(self.HL_Lockout_input, 750, 200))
+        HL_Lockout_unit_label.grid(row=4, column=3, padx=10, pady=5,sticky="nsw")
+        self.HL_Lockout_input.bind("<1>", self.NumKeyboardCallback(self.HL_Lockout_input, 750, 50))
 
         #stopped here
-        MAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Ideal Mixed Air Temp:")
+        MAT_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Ideal Mixed Air Temp:", width=Label_column_width)
         MAT_label.grid(row=5, column=1,padx=10, pady=5, sticky="e")
         self.MAT_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.MAT_input.grid(row=5, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.MAT_input.grid(row=5, column=2, padx=10, pady=5, sticky="nsew")
         MAT_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = u"\u00b0"+"F")
-        MAT_unit_label.grid(row=5, column=9, padx=10, pady=5,sticky="nsw")
-        self.MAT_input.bind("<1>", self.NumKeyboardCallback(self.MAT_input, 750, 200))
+        MAT_unit_label.grid(row=5, column=3, padx=10, pady=5,sticky="nsw")
+        self.MAT_input.bind("<1>", self.NumKeyboardCallback(self.MAT_input, 750, 50))
 
 
-        SR_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Sampling Rate:")
+        SR_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Sampling Rate:", width=Label_column_width)
         SR_label.grid(row=6, column=1,padx=10, pady=5, sticky="e")
         self.SR_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.SR_input.grid(row=6, column=2, columnspan=7, padx=10, pady=5, sticky="nsew")
+        self.SR_input.grid(row=6, column=2, padx=10, pady=5, sticky="nsew")
         SR_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "min")
-        SR_unit_label.grid(row=6, column=9, padx=10, pady=5,sticky="nsw")
-        self.SR_input.bind("<1>", self.NumKeyboardCallback(self.SR_input, 750, 200))
+        SR_unit_label.grid(row=6, column=3, padx=10, pady=5,sticky="nsw")
+        self.SR_input.bind("<1>", self.NumKeyboardCallback(self.SR_input, 750, 50))
 
-        time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Current Time:")
+        time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Current Time:", width=Label_column_width)
         time_label.grid(row=7, column=1,padx=10, pady=5, sticky="e")
+        
+        time_frame = ctk.CTkFrame(App.frames[frame_id], fg_color="#212121")
+        time_frame.grid(row=7, column=2, padx = 10, pady=5, sticky="nsew")
+        time_frame.grid_rowconfigure(0, weight=1)
+        time_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
-        self.time_input1 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.time_input1.grid(row=7, column=2, columnspan=3, pady=5, padx=(10,0), sticky="nsew")
-        time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text=":", text_color="#fff")
-        time_label.grid(row=7, column=5,padx=0, pady=5, sticky="nsew")
-        self.time_input2 = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.time_input2.grid(row=7, column=6, columnspan=3, padx=(0,10), pady=5, sticky="nsew")
+        self.time_input1 = ctk.CTkEntry(time_frame, placeholder_text=" ", validate="key")
+        self.time_input1.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+        time_label = ctk.CTkLabel(time_frame, font=self.my_font, text=":", text_color="#fff")
+        time_label.grid(row=0, column=1,sticky="nsew")
+        self.time_input2 = ctk.CTkEntry(time_frame, placeholder_text=" ", validate="key")
+        self.time_input2.grid(row=0, column=2, padx=(10, 0), sticky="nsew")
 
         self.time_unit_label = ctk.CTkOptionMenu(App.frames[frame_id], values=["AM", "PM"], fg_color=self.bg, font=self.my_font)
-        self.time_unit_label.grid(row=7, column=9, padx=10, pady=5,sticky="nsw")        
-        self.time_input1.bind("<1>", self.NumKeyboardCallback(self.time_input1, 750, 200))
-        self.time_input2.bind("<1>", self.NumKeyboardCallback(self.time_input2, 750, 200))
+        self.time_unit_label.grid(row=7, column=3, padx=10, pady=5,sticky="nsw")        
+        self.time_input1.bind("<1>", self.NumKeyboardCallback(self.time_input1, 750, 50))
+        self.time_input2.bind("<1>", self.NumKeyboardCallback(self.time_input2, 750, 50))
 
-        date_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Date:")
+        date_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Date:", width=Label_column_width)
         date_label.grid(row=8, column=1,padx=10, pady=5, sticky="e")
-
-        self.month_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.month_input.grid(row=8, column=2, padx=(10,0), pady=5, sticky="nsew")
-        slash_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="/", text_color="#fff")
-        slash_label.grid(row=8, column=3,padx=0, pady=5, sticky="nsew")
-        self.day_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.day_input.grid(row=8, column=4, columnspan=3, padx=0, pady=5, sticky="nsew")
-        slash_label_2 = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="/", text_color="#fff")
-        slash_label_2.grid(row=8, column=7, padx=0, pady=5, sticky="nsew")
-        self.year_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", validate="key")
-        self.year_input.grid(row=8, column=8, columnspan=1, padx=(0,10), pady=5, sticky="nsew")
+        
+        date_frame = ctk.CTkFrame(App.frames[frame_id], fg_color="#212121")
+        date_frame.grid(row=8, column=2, padx = 10, pady=5, sticky="nsew")
+        date_frame.grid_rowconfigure(0, weight=1)
+        date_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        
+        self.month_input = ctk.CTkEntry(date_frame, placeholder_text=" ", validate="key")
+        self.month_input.grid(row=0, column=0, padx=(0, 10), sticky="ns")
+        slash_label = ctk.CTkLabel(date_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label.grid(row=0, column=1, padx=10, sticky="ns")
+        self.day_input = ctk.CTkEntry(date_frame, placeholder_text=" ", validate="key")
+        self.day_input.grid(row=0, column=2, padx=10, sticky="ns")
+        slash_label_2 = ctk.CTkLabel(date_frame, font=self.my_font, text="/", text_color="#fff")
+        slash_label_2.grid(row=0, column=3, padx=10, sticky="ns")
+        self.year_input = ctk.CTkEntry(date_frame, placeholder_text=" ", validate="key")
+        self.year_input.grid(row=0, column=4, padx=(10, 0), sticky="ns")
 
         date_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "Month/Day/Year")
-        date_unit_label.grid(row=8, column=9, padx=10, pady=0,sticky="nsw")
+        date_unit_label.grid(row=8, column=3, padx=10, pady=0,sticky="nsw")
 
         # for running on this computer
-        self.month_input.bind("<1>", self.NumKeyboardCallback(self.month_input, 750, 200))
-        self.day_input.bind("<1>", self.NumKeyboardCallback(self.day_input, 750, 200))
-        self.year_input.bind("<1>", self.NumKeyboardCallback(self.year_input, 750, 200))
+        self.month_input.bind("<1>", self.NumKeyboardCallback(self.month_input, 750, 50))
+        self.day_input.bind("<1>", self.NumKeyboardCallback(self.day_input, 750, 50))
+        self.year_input.bind("<1>", self.NumKeyboardCallback(self.year_input, 750, 50))
 
         # end is 3 buttons for going to each page
         
         # self.view_plot_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Ideal Economizer Curve", command=partial(self.handle_parameters_for_curve_view, App.frames[frame_id]), height=35, corner_radius=4)
         # self.view_plot_button.grid(row=10, column=1, padx=20, pady=20, sticky="ew")
 
-        self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=self.CancelInputFrame, font=self.my_font, text="Cancel", height=35, corner_radius=4)
-        self.cancel_button.grid(row=9, column=2, columnspan=7, padx=20, pady=20, sticky="ew")
-        self.save_exit_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Save & Begin Logging", command=self.handle_install_inputs, height=35, width=300, corner_radius=4)
-        self.save_exit_button.grid(row=9, column=9, padx=20, pady=20, sticky="ew")
+        self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=self.CancelInputFrame, font=self.my_font, text="Cancel", height=40, corner_radius=4)
+        self.cancel_button.grid(row=9, column=2, padx=20, pady=20, sticky="ew")
+        self.save_exit_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Save & Begin Logging", command=self.handle_install_inputs, height=40, width=600, corner_radius=4)
+        self.save_exit_button.grid(row=9, column=3, padx=20, pady=20, sticky="ew")
     
-    #MARK: CancelInputFrame
+    # MARK: CancelInputFrame
     def CancelInputFrame(self):
         # remove all of the inputs 
         self.system_name_input.delete(0,len(self.system_name_input.get()))
@@ -373,7 +360,7 @@ class App(ctk.CTk):
             # store in CSV file
             parameters = [self.min_OAT,self.RAT,self.LL_Lockout,self.HL_Lockout,self.MAT, self.SR]
             print(parameters)
-            file_store = "/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles" + self.system_name + ".params"
+            file_store = "/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/" + self.system_name + ".params"
             with open(file_store, 'w', newline='') as new_file:
                csv_writer = csv.writer(new_file) # create the new file or start writing to existing file
                csv_writer.writerow(parameters) # Write first row as the user parameters
@@ -469,9 +456,9 @@ class App(ctk.CTk):
         search_label.grid(row=0, column=0,padx=10, pady=10, sticky="w")
 
         self.search_string_var = ctk.StringVar()
-        self.search_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", height=35, font=self.my_font, textvariable=self.search_string_var)
+        self.search_input = ctk.CTkEntry(App.frames[frame_id], placeholder_text=" ", height=40, font=self.my_font, textvariable=self.search_string_var)
         self.search_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="nsew")
-        self.search_input.bind("<FocusIn>", self.KeyboardCallback(self.search_input, 100, 200), add='+')
+        self.search_input.bind("<FocusIn>", self.KeyboardCallback(self.search_input, 25, 200), add='+')
     
 
         # create scrollable frame
@@ -481,31 +468,39 @@ class App(ctk.CTk):
         # self.scrollable_frame_files = []
         self.scrollable_logger_files = []
         self.scrollable_local_files = []
-        self.selected_file = None
-        self.logger_file_names = self.GetAvailableArduinoFiles()
-        self.local_data_file_names, self.local_param_file_names = self.GetAvailableDownloadedFiles()
-
-        for i, file in enumerate(self.logger_file_names):
-            button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
-            button.grid(row=i, column=0, padx=0, pady=5, sticky="nsew")
-            # self.scrollable_frame_files.append(button)
-            self.scrollable_logger_files.append(button)
-
-        for i, file in enumerate(self.local_data_file_names):
-            button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
-            button.grid(row=i, column=0, padx=0, pady=5, sticky="nsew")
-            # self.scrollable_frame_files.append(button)
-            self.scrollable_local_files.append(button)
-        self.InitFilterFiles()
-        # self.search_input.bind("<KeyRelease>", self.FilterFiles, add='+')
+        self.scrollable_logger_file_names = []
+        self.scrollable_local_file_names = []
+        self.SetScrollableFiles()
         self.search_string_var.trace_add('write', self.FilterFiles)
         self.error_info_label = ctk.CTkLabel(App.frames[frame_id], text = "", font=self.my_font)
         self.error_info_label.grid(row=2, column=1, columnspan=2, pady=0, sticky="s")
         self.select_system_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Select System", height=40, command=self.CheckDownloadFromPi, corner_radius=4)
         self.select_system_button.grid(row=3, column=1, columnspan = 2, padx=20, pady=20, sticky="ew")
 
-        self.back_button = ctk.CTkButton(App.frames[frame_id], command=self.BackFromDownloadFrame, font=self.my_font, text="Back", height=35)
+        self.back_button = ctk.CTkButton(App.frames[frame_id], command=self.BackFromDownloadFrame, font=self.my_font, text="Back", height=40)
         self.back_button.grid(row=3, column=3, padx=20, pady=20, sticky="ew")
+
+    def SetScrollableFiles(self):  
+        self.scrollable_logger_file_names 
+        self.scrollable_local_file_names 
+        self.selected_file = None
+        self.logger_file_names = self.GetAvailableArduinoFiles()
+        self.local_data_file_names, self.local_param_file_names = self.GetAvailableDownloadedFiles()
+
+        for i, file in enumerate(self.logger_file_names):
+            if (self.scrollable_logger_file_names.count(file) == 0):
+                button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
+                button.grid(row=i, column=0, padx=0, pady=5, sticky="nsew")
+                self.scrollable_logger_files.append(button)
+                self.scrollable_logger_file_names.append(file)
+
+        for i, file in enumerate(self.local_data_file_names):
+            if (self.scrollable_local_file_names.count(file) == 0):
+                button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
+                button.grid(row=i, column=0, padx=0, pady=5, sticky="nsew")
+                self.scrollable_local_files.append(button)
+                self.scrollable_local_file_names.append(file)
+        self.InitFilterFiles()
 
     def BackFromDownloadFrame(self):
         self.error_info_label.configure(text="", )
@@ -514,19 +509,19 @@ class App(ctk.CTk):
 
     # three string variable parameters, int32 output
     def mm_dd_yy_to_epoch(self, month, day, year, hour, minute):
-        if (len(minute) < 2):
+        while (len(minute) < 2):
             minute = "0" + minute
             print("minute: ", minute)
-        if (len(hour) < 2):
+        while (len(hour) < 2):
             hour = "0" + hour
             print("hour: ", hour)
-        if (len(year) < 4):
+        while (len(year) < 4):
             year = "20" + year
             print("year: ", year)
-        if (len(month) < 2):
+        while (len(month) < 2):
             month = "0" + month
             print("month: ", month)
-        if (len(day) < 2):
+        while (len(day) < 2):
             day = "0" + day
             print("day: ", day)
         # Parse the month, day, and year strings
@@ -921,8 +916,8 @@ class App(ctk.CTk):
             print("Serial connection failed")
         return files
     def GetAvailableDownloadedFiles(self):
-        param_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles")
-        data_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files")
+        param_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/")
+        data_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/")
 
         for i in range(len(param_files)):
             param_files[i] = param_files[i].split(".")[0]
@@ -955,12 +950,12 @@ class App(ctk.CTk):
         self.filter_files = True
 
     def KeyboardCallback(self, event, x_loc, y_loc):
-        self.keyboard = PopupKeyboard(event, x=100, y=200)
+        self.keyboard = PopupKeyboard(event, x=x_loc, y=y_loc, keyheight=3, keywidth=6)
         self.keyboard.bind('<Map>', self.EnableFilter)
         self.keyboard.disable = False
 
     def NumKeyboardCallback(self, event, x_loc, y_loc):
-        self.numkeyboard= PopupNumpad(event, x=x_loc, y=y_loc)
+        self.numkeyboard= PopupNumpad(event, x=x_loc, y=y_loc, keyheight=60, keywidth=60)
         self.numkeyboard.disable = False
 # MARK: Loading Frame
     def create_loading_frame(self, frame_id):
@@ -1013,10 +1008,6 @@ class App(ctk.CTk):
 
 # MARK: DownloadData
     def DownloadDataFromPi(self):
-        # if self.selected_file is None:
-        #     self.error_info_label.configure(text="*No File Selected", )
-        #     return
-        # scrollable_files = self.scrollable_logger_files
         if (not self.use_local_data):
             try:
                 self.date_data, self.oat_data, self.mat_data, self.motor_data = self.ReadAllData("-g={}.csv".format(self.selected_file_name), 115200)
@@ -1034,6 +1025,7 @@ class App(ctk.CTk):
                     file_writer.writerow(parameters)
             except Exception as e:
                 print("Arduino Connection error: ", e)
+            self.SetScrollableFiles()
             
         parameter_files = self.selected_file_name + ".params"
         self.selected_file_name = self.selected_file_name + ".csv"
