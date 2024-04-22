@@ -1,11 +1,10 @@
-
+#!/usr/bin/python
 import tkinter
 import customtkinter as ctk
 from functools import partial
 import os
 import serial
 import csv
-from CTkPopupKeyboard import PopupKeyboard, PopupNumpad
 from PIL import Image
 from time import strftime, localtime, time, sleep
 import datetime
@@ -13,6 +12,10 @@ import calendar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+import sys
+sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/numpad')
+from keyboard import PopupKeyboard
+from numpad import PopupNumpad
 
 DARK_MODE = "dark"
 ctk.set_appearance_mode(DARK_MODE)
