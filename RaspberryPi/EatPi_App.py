@@ -657,8 +657,8 @@ class App(ctk.CTk):
             mat_for_plot3 = [] # maybe dont make them zero?
             mat_for_plot4 = [] # maybe dont make them zero?
             for i, temp in enumerate(oat_for_plot):
-                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt):
-                    if(temp >= hllt): #Im sorry michael - kyle
+                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt or temp > MAT_at_min_OA[i]):
+                    if(temp > lllt): #Im sorry michael - kyle
                         mat_for_plot4.append(MAT_at_min_OA[i])
                         oat_for_plot4.append(temp)
                     else:
@@ -1001,6 +1001,8 @@ class App(ctk.CTk):
         App.current.after(10, self.CheckDownloadFromPi_2) # force it to wait 1ms until after button is disabled
         self.error_info_label.configure(text="", )
         self.search_input.delete(0,len(self.search_input.get()))
+        self.select_system_button.configure(state="normal")
+        
 
 # MARK: CheckDownload
     def CheckDownloadFromPi_2(self):
