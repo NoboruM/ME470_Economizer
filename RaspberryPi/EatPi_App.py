@@ -13,6 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import sys
 sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/numpad')
+sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/keyboard')
 from keyboard import PopupKeyboard
 from numpad import PopupNumpad
 
@@ -22,15 +23,20 @@ ctk.set_default_color_theme("blue")
 
 #MARK: CustomSerial
 def CustomSerial(message, baud_rate):
-    ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=1)
-    ser.write("{}\r\n".format(message).encode())
-    start_time = time()
-    response = ser.readline().decode().strip()
-    while (time() - start_time) < 6 and response == "":
+    response = ""
+    try:
+        ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=1)
         ser.write("{}\r\n".format(message).encode())
+        start_time = time()
         response = ser.readline().decode().strip()
-        # print("response: '{}'".format(response))
-    ser.close()
+        while (time() - start_time) < 6 and response == "":
+            ser.write("{}\r\n".format(message).encode())
+            response = ser.readline().decode().strip()
+            # print("response: '{}'".format(response))
+        ser.close()
+    except Exception as e:
+        print("Arduino Connection error: ", e)
+
     return response
 
 class ToplevelWindow(ctk.CTkToplevel):
@@ -77,7 +83,6 @@ class App(ctk.CTk):
         self.create_home_frame("home")
         self.create_download_frame("download")
         self.create_loading_frame('loading')
-        # self.create_download_frame("curve")
         
         # set the initial frame to display  
         App.current = App.frames["home"]
@@ -199,6 +204,10 @@ class App(ctk.CTk):
         date_unit_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text = "Month/Day/Year")
         date_unit_label.grid(row=8, column=3, padx=10, pady=0,sticky="nsw")
 
+        self.install_error_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text=" ", )
+        self.install_error_label.grid(row=9, column=1)
+
+
         # for running on this computer
         self.month_input.bind("<1>", self.NumKeyboardCallback(self.month_input, 750, 50))
         self.day_input.bind("<1>", self.NumKeyboardCallback(self.day_input, 750, 50))
@@ -244,6 +253,8 @@ class App(ctk.CTk):
         self.day_input.configure(fg_color = self.bg)
         self.year_input.configure(fg_color = self.bg)
         self.toggle_frame_by_id("home")
+        self.install_error_label.configure(text=" ")
+
 
 # MARK: HandleCurveParams
     def handle_parameters_for_curve_view(self, frame):
@@ -337,7 +348,14 @@ class App(ctk.CTk):
                 input.configure(fg_color= "#754543")
             else:
                 input.configure(fg_color= self.bg)
-        inputs_valid = True
+        
+        response = CustomSerial("-p?\r\n", 115200)
+        print("response: ", response)
+        if (response != "AOK"):
+            # TODO: give some indication of error
+            self.install_error_label.configure(text="Logger not connected", text_color="#ff0000")
+            return
+        self.install_error_label.configure(text=" ")
         if inputs_valid:
             # clear all inputs?
             self.min_OAT = self.min_OAT_input.get()
@@ -373,11 +391,6 @@ class App(ctk.CTk):
             self.SendInstallationInputs()
 # MARK:SendInstallInputs
     def SendInstallationInputs(self):
-        response = CustomSerial("-p?\r\n", 115200)
-        print("response: ", response)
-        if (response != "AOK"):
-            # TODO: give some indication of error
-            return
         filename = self.system_name + '.params'
         response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the recording filename
         response = CustomSerial("-t={}\r\n".format(self.current_epoch_time), 115200) # set date/time
@@ -424,8 +437,8 @@ class App(ctk.CTk):
         button5.grid_forget() 
 
         # button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_home_buttons(App.frames[frame_id], button3, button4, button5))
-        button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=partial(self.DetermineDownloadSource, "Download Data"))
-        button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
+        self.button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=partial(self.DetermineDownloadSource, "Download Data"))
+        self.button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
 #MARK: ShowExtraHomeBut
     def show_additional_home_buttons(self, frame, main_button, button1, button2):
         if getattr(main_button, "additional_buttons_shown", False):
@@ -554,7 +567,7 @@ class App(ctk.CTk):
             #datetime64[s]
             # Process csv file of data points
             data_file_name = "/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/" + data_file_name
-            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=1, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
+            data = np.genfromtxt(data_file_name, delimiter=',', skip_header=0, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
             print("date: ", "'{}'".format(date))
             oat = data['OAT']
@@ -863,7 +876,7 @@ class App(ctk.CTk):
 
         return_home_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Return Home", height=40, corner_radius=4, command=partial(self.toggle_frame_by_id, "home"))
         return_home_button.grid(row=9, column=0, columnspan= 5, sticky='sew', padx=4, pady=5)
-
+# MARK: InitFilterFiles
     def InitFilterFiles(self):
         text = self.search_input.get()
         self.filtered_frame_files = []
@@ -905,7 +918,9 @@ class App(ctk.CTk):
         print("Getting files")
         files = []
         try:
+            print("establishing connection")
             response = CustomSerial("-p?", 115200)
+            print("got a response")
             if (response != "AOK"):
                 print("unexpected response: ", response)
                 return files
@@ -917,6 +932,7 @@ class App(ctk.CTk):
         except serial.SerialException as e:
             print("Serial connection failed")
         return files
+
     def GetAvailableDownloadedFiles(self):
         param_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/")
         data_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/")
@@ -1014,7 +1030,7 @@ class App(ctk.CTk):
             try:
                 self.date_data, self.oat_data, self.mat_data, self.motor_data = self.ReadAllData("-g={}.csv".format(self.selected_file_name), 115200)
                 parameters = CustomSerial("-x={}.params".format(self.selected_file_name), 115200)
-                sample_rate = (self.date_data[10] - self.date_data[0])//600
+                sample_rate = (int(self.date_data[10]) - int(self.date_data[0]))//600
                 print("sample rate: ", sample_rate)
                 if parameters == "ER2":
                     print("This parameters file does not exist")
@@ -1056,15 +1072,29 @@ class App(ctk.CTk):
         button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Return Home",  command=partial(self.toggle_frame_by_id,"home"))
         button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
 
+#MARK: DetermineDownloadSource
     def DetermineDownloadSource(self, button_pressed):
         if button_pressed == "View Downloaded Data":
             self.use_local_data = True
         elif button_pressed == "Download Data":
             self.use_local_data = False
+            if (len(self.logger_file_names) == 0):
+                self.button3.configure(state="disabled")
+                App.current.update()
+                self.logger_file_names = self.GetAvailableArduinoFiles()
+                for i, file in enumerate(self.logger_file_names):
+                    if (self.scrollable_logger_file_names.count(file) == 0):
+                        button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
+                        button.grid(row=i, column=0, padx=0, pady=5, sticky="nsew")
+                        self.scrollable_logger_files.append(button)
+                        self.scrollable_logger_file_names.append(file)
         else:
             print("Incorrect message for downloading data")
+        
+        
         self.InitFilterFiles()
         self.toggle_frame_by_id("download")
+        self.button3.configure(state="normal")
     
     #MARK: ReadAllData
     def ReadAllData(self, message, baud_rate): # Randomly generated data with motor -> 17.219s without csv file read
@@ -1115,8 +1145,8 @@ class App(ctk.CTk):
                     start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
             ser.close()
             print("time elapsed: ", time() - test_start)
-            self.progressbar.set(1) 
-            self.percentage_label.configure(text="{:.0f}%".format(100))
+            self.progressbar.set(0.99) 
+            self.percentage_label.configure(text="{:.0f}%".format(99))
             App.current.update()
         except Exception as e:
             print('reading the data caused: ', e)
