@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=EATPi
+Version=V0.0.1
+Icon=pupil-capture
+Exec=/home/eat/Documents/ME470_Economizer/RaspberryPi/EatPi_App.py 
+Terminal=false
+Type=Application
+StartupNotify=false
+Name[en_US]=EatPi
