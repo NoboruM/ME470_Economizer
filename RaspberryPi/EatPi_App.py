@@ -569,7 +569,6 @@ class App(ctk.CTk):
             data_file_name = "/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/" + data_file_name
             data = np.genfromtxt(data_file_name, delimiter=',', skip_header=0, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
-            print("date: ", "'{}'".format(date))
             oat = data['OAT']
             mat = data['MAT']
             motor = data['Motor_State']
@@ -580,8 +579,16 @@ class App(ctk.CTk):
             oat_off = []
             mat_on = []
             mat_off = []
+            iter_range = 0
+            print("type of motor: ", type(motor))
+            print("motor: ", motor)
+            iter_range = motor.size
 
-            for i in range(len(motor)):
+            motor.reshape((motor.size))
+            date.reshape((date.size))
+            oat.reshape((oat.size))
+            mat.reshape((mat.size))
+            for i in range(iter_range):
                 if motor[i] == 1:
                     date_on.append(date[i])
                     oat_on.append(oat[i])
@@ -657,8 +664,8 @@ class App(ctk.CTk):
             mat_for_plot3 = [] # maybe dont make them zero?
             mat_for_plot4 = [] # maybe dont make them zero?
             for i, temp in enumerate(oat_for_plot):
-                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt or temp > MAT_at_min_OA[i]):
-                    if(temp > lllt): #Im sorry michael - kyle
+                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt):
+                    if(temp >= hllt): #Im sorry michael - kyle
                         mat_for_plot4.append(MAT_at_min_OA[i])
                         oat_for_plot4.append(temp)
                     else:
@@ -672,7 +679,7 @@ class App(ctk.CTk):
                     oat_for_plot3.append(temp)
 
             # Plot ideal economizer curve
-            ax.plot(oat_for_plot1, mat_for_plot1, color='#fa8b41', linewidth=2)
+            ax.plot(oat_for_plot1, mat_for_plot1, color='#fa8b41', linewidth=2) #''
             ax.plot(oat_for_plot2, mat_for_plot2, color='#fa8b41', linewidth=2)
             ax.plot(oat_for_plot3, mat_for_plot3, color='#fa8b41', linewidth=2)
             ax.plot(oat_for_plot4, mat_for_plot4, color='#fa8b41', linewidth=2)
@@ -816,10 +823,10 @@ class App(ctk.CTk):
         data_points_toggle = ctk.CTkCheckBox(widgets_frame, text="Data Points", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=points_check, command=partial(handle_plot, "points", oat_on, oat_off, mat_on, mat_off, parameters_array))
         data_points_toggle.grid(row=2, column=0, sticky='w', pady=5)
 
-        motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor On", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=on_check, command=partial(handle_plot, "on", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="HVAC On", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=on_check, command=partial(handle_plot, "on", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_on_toggle.grid(row=3, column=0, sticky='w', padx=30, pady=5)
 
-        motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="Motor Off", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=off_check, command=partial(handle_plot, "off", oat_on, oat_off, mat_on, mat_off, parameters_array))
+        motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="HVAC Off", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=off_check, command=partial(handle_plot, "off", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_off_toggle.grid(row=4, column=0, sticky='w', padx=30, pady=5)
 
         date_range_label = ctk.CTkLabel(widgets_frame, text="Date Range:", font=self.my_font)
@@ -876,6 +883,10 @@ class App(ctk.CTk):
 
         return_home_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Return Home", height=40, corner_radius=4, command=partial(self.toggle_frame_by_id, "home"))
         return_home_button.grid(row=9, column=0, columnspan= 5, sticky='sew', padx=4, pady=5)
+
+    def LiveDataBackground(self):
+        
+
 # MARK: InitFilterFiles
     def InitFilterFiles(self):
         text = self.search_input.get()
@@ -1001,7 +1012,7 @@ class App(ctk.CTk):
         App.current.after(10, self.CheckDownloadFromPi_2) # force it to wait 1ms until after button is disabled
         self.error_info_label.configure(text="", )
         self.search_input.delete(0,len(self.search_input.get()))
-        self.select_system_button.configure(state="normal")
+        # self.select_system_button.configure(state="normal")
         
 
 # MARK: CheckDownload
