@@ -884,8 +884,12 @@ class App(ctk.CTk):
         return_home_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Return Home", height=40, corner_radius=4, command=partial(self.toggle_frame_by_id, "home"))
         return_home_button.grid(row=9, column=0, columnspan= 5, sticky='sew', padx=4, pady=5)
 
+# MARK: LiveDataBackground
     def LiveDataBackground(self):
-        
+        # run forever
+        while True: # change to run until 
+            response = CustomSerial("-d?", 115200)
+            print('Background task!')
 
 # MARK: InitFilterFiles
     def InitFilterFiles(self):
