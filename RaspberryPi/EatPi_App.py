@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import sys
-sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/numpad')
+sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/numpad') # fixt this. Should not be hard coded in
 sys.path.append('/home/eat/Documents/ME470_Economizer/RaspberryPi/keyboard')
 from keyboard import PopupKeyboard
 from numpad import PopupNumpad
@@ -521,6 +521,155 @@ class App(ctk.CTk):
         self.error_info_label.configure(text="", )
         self.search_input.delete(0,len(self.search_input.get()))
         self.toggle_frame_by_id("home")
+# MARK: CheckDownload
+    def CheckDownloadFromPi(self):
+        self.select_system_button.configure(state="disabled")
+        App.current.after(10, self.CheckDownloadFromPi_2) # force it to wait 1ms until after button is disabled
+        self.error_info_label.configure(text="", )
+        self.search_input.delete(0,len(self.search_input.get()))
+        # self.select_system_button.configure(state="normal")
+        
+# MARK: CheckDownload_2
+    def CheckDownloadFromPi_2(self):
+        print("checking load from pi")
+        if self.selected_file is None:
+            self.error_info_label.configure(text="*No File Selected", )
+            return
+        scrollable_files = self.scrollable_logger_files
+        if (self.use_local_data):
+            self.selected_file_name = self.scrollable_local_files[self.selected_file].cget("text")
+            print("file selected: " + self.selected_file_name)
+
+            parameter_files = self.selected_file_name + ".params"
+            self.selected_file_name = self.selected_file_name + ".csv"
+            self.create_curve_frame("curve", self.selected_file_name, parameter_files)
+            self.toggle_frame_by_id("curve")
+        else:
+            self.selected_file_name = scrollable_files[self.selected_file].cget("text")
+            print("file selected: " + self.selected_file_name)
+            self.toggle_frame_by_id("loading")
+            App.current.after(200, self.DownloadDataFromArduino) # force it to wait 50ms until after button is disabled
+        self.select_system_button.configure(state="normal")
+
+# MARK: DownloadData
+    def DownloadDataFromArduino(self):
+        if (not self.use_local_data):
+            try:
+                self.date_data, self.oat_data, self.mat_data, self.motor_data = self.ReadAllData("-g={}.csv".format(self.selected_file_name), 115200)
+                parameters = CustomSerial("-x={}.params".format(self.selected_file_name), 115200)
+                sample_rate = (int(self.date_data[10]) - int(self.date_data[0]))//600
+                print("sample rate: ", sample_rate)
+                if parameters == "ER2":
+                    print("This parameters file does not exist")
+                print("type of parameters", type(parameters))
+                params_file_name = 'Param'
+                with open('/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/{}.params'.format(self.selected_file_name), 'w', newline='') as param_file:
+                    file_writer = csv.writer(param_file, delimiter=',')
+                    parameters = parameters.split(",")
+                    parameters.append(sample_rate)
+                    file_writer.writerow(parameters)
+            except Exception as e:
+                print("Arduino Connection error: ", e)
+            self.SetScrollableFiles()
+            
+        parameter_files = self.selected_file_name + ".params"
+        self.selected_file_name = self.selected_file_name + ".csv"
+        self.create_curve_frame("curve", self.selected_file_name, parameter_files)
+        self.toggle_frame_by_id("curve")
+        self.progressbar.set(0) # reset loading bar
+        self.percentage_label.configure(text="{:.0f}%".format(0))
+        
+
+# MARK: InitFilterFiles
+    def InitFilterFiles(self):
+        text = self.search_input.get()
+        self.filtered_frame_files = []
+        scrollable_files = self.scrollable_logger_files
+        if (self.use_local_data):
+            scrollable_files = self.scrollable_local_files
+            for file in self.scrollable_logger_files:
+                file.grid_forget()
+        else:
+            for file in self.scrollable_local_files:
+                file.grid_forget()
+        for i, file in enumerate(scrollable_files):
+            file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
+
+#MARK: FilterFiles
+    def FilterFiles(self, *args):
+        print("in FilterFiles: self.filter_file=", self.filter_files)
+        if (self.filter_files):
+            text = self.search_input.get()
+            self.filtered_frame_files = []
+            scrollable_files = self.scrollable_logger_files
+            if (self.use_local_data):
+                scrollable_files = self.scrollable_local_files
+                for file in self.scrollable_logger_files:
+                    file.grid_forget()
+            else:
+                for file in self.scrollable_local_files:
+                    file.grid_forget()
+            for file in scrollable_files:
+                if file.cget("text").lower().startswith(text.lower()):
+                    self.filtered_frame_files.append(file)
+                else:
+                    file.grid_forget()
+            for i, file in enumerate(self.filtered_frame_files):
+                file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
+
+#MARK: GetAvailableArduinoFiles  
+    def GetAvailableArduinoFiles(self):
+        print("Getting files")
+        files = []
+        try:
+            print("establishing connection")
+            response = CustomSerial("-p?", 115200)
+            print("got a response")
+            if (response != "AOK"):
+                print("unexpected response: ", response)
+                return files
+            files = CustomSerial("-g?", 115200).split(",")
+
+            for i in range(len(files)):
+                files[i] = files[i].split(".")[0]
+            files.sort()
+        except serial.SerialException as e:
+            print("Serial connection failed")
+        return files
+
+    def GetAvailableDownloadedFiles(self):
+        param_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/")
+        data_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/")
+
+        for i in range(len(param_files)):
+            param_files[i] = param_files[i].split(".")[0]
+        for i in range(len(data_files)):
+            data_files[i] = data_files[i].split(".")[0]
+        return data_files, param_files
+        
+#MARK: FileSelection
+    def FileSelection(self, file_name):
+        self.filter_files = False
+        print("file selection")
+        print("in file section self.filter_files= ", self.filter_files)
+        self.error_info_label.configure(text="", )
+        curr_input = self.search_input.get()
+        self.search_input.delete(0,len(curr_input))
+        self.search_input.insert(0, file_name)
+        scrollable_files = self.scrollable_logger_files
+        if (self.use_local_data):
+            scrollable_files = self.scrollable_local_files
+        # change the color of the button to be slightly greyed out
+        # reset the colors of all of the other buttons
+        for i in range(len(scrollable_files)):
+            text = scrollable_files[i].cget("text")
+            if (text == file_name):
+                self.selected_file = i
+                scrollable_files[i].configure(fg_color="#635888")
+            else:
+                scrollable_files[i].configure(fg_color="#39334f")
+    def EnableFilter(self, *args):
+        self.filter_files = True
 
     # three string variable parameters, int32 output
     def mm_dd_yy_to_epoch(self, month, day, year, hour, minute):
@@ -548,6 +697,7 @@ class App(ctk.CTk):
         epoch_time = int(dt_object.timestamp())
 
         return epoch_time
+    
 # MARK: CreateCurveFrame
     def create_curve_frame(self, frame_id, raw_data, curve_parameters):
         #returns three string variables
@@ -891,97 +1041,6 @@ class App(ctk.CTk):
             response = CustomSerial("-d?", 115200)
             print('Background task!')
 
-# MARK: InitFilterFiles
-    def InitFilterFiles(self):
-        text = self.search_input.get()
-        self.filtered_frame_files = []
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            scrollable_files = self.scrollable_local_files
-            for file in self.scrollable_logger_files:
-                file.grid_forget()
-        else:
-            for file in self.scrollable_local_files:
-                file.grid_forget()
-        for i, file in enumerate(scrollable_files):
-            file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
-
-#MARK: FilterFiles
-    def FilterFiles(self, *args):
-        print("in FilterFiles: self.filter_file=", self.filter_files)
-        if (self.filter_files):
-            text = self.search_input.get()
-            self.filtered_frame_files = []
-            scrollable_files = self.scrollable_logger_files
-            if (self.use_local_data):
-                scrollable_files = self.scrollable_local_files
-                for file in self.scrollable_logger_files:
-                    file.grid_forget()
-            else:
-                for file in self.scrollable_local_files:
-                    file.grid_forget()
-            for file in scrollable_files:
-                if file.cget("text").lower().startswith(text.lower()):
-                    self.filtered_frame_files.append(file)
-                else:
-                    file.grid_forget()
-            for i, file in enumerate(self.filtered_frame_files):
-                file.grid(row=i, column=0, padx=0, pady=10, sticky="nsew")
-
-#MARK: GetAvailableArduinoFiles  
-    def GetAvailableArduinoFiles(self):
-        print("Getting files")
-        files = []
-        try:
-            print("establishing connection")
-            response = CustomSerial("-p?", 115200)
-            print("got a response")
-            if (response != "AOK"):
-                print("unexpected response: ", response)
-                return files
-            files = CustomSerial("-g?", 115200).split(",")
-
-            for i in range(len(files)):
-                files[i] = files[i].split(".")[0]
-            files.sort()
-        except serial.SerialException as e:
-            print("Serial connection failed")
-        return files
-
-    def GetAvailableDownloadedFiles(self):
-        param_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/")
-        data_files = os.listdir("/home/eat/Documents/ME470_Economizer/RaspberryPi/CSV_Files/")
-
-        for i in range(len(param_files)):
-            param_files[i] = param_files[i].split(".")[0]
-        for i in range(len(data_files)):
-            data_files[i] = data_files[i].split(".")[0]
-        return data_files, param_files
-        
-#MARK: SelectFiles
-    def FileSelection(self, file_name):
-        self.filter_files = False
-        print("file selection")
-        print("in file section self.filter_files= ", self.filter_files)
-        self.error_info_label.configure(text="", )
-        curr_input = self.search_input.get()
-        self.search_input.delete(0,len(curr_input))
-        self.search_input.insert(0, file_name)
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            scrollable_files = self.scrollable_local_files
-        # change the color of the button to be slightly greyed out
-        # reset the colors of all of the other buttons
-        for i in range(len(scrollable_files)):
-            text = scrollable_files[i].cget("text")
-            if (text == file_name):
-                self.selected_file = i
-                scrollable_files[i].configure(fg_color="#635888")
-            else:
-                scrollable_files[i].configure(fg_color="#39334f")
-    def EnableFilter(self, *args):
-        self.filter_files = True
-
     def KeyboardCallback(self, event, x_loc, y_loc):
         self.keyboard = PopupKeyboard(event, x=x_loc, y=y_loc, keyheight=3, keywidth=6)
         self.keyboard.bind('<Map>', self.EnableFilter)
@@ -1011,64 +1070,7 @@ class App(ctk.CTk):
         self.percentage_label = ctk.CTkLabel(text_frame, font=self.home_font, text="0%")
         self.percentage_label.grid(row=2, column=0, pady=0, sticky="n")
         
-    def CheckDownloadFromPi(self):
-        self.select_system_button.configure(state="disabled")
-        App.current.after(10, self.CheckDownloadFromPi_2) # force it to wait 1ms until after button is disabled
-        self.error_info_label.configure(text="", )
-        self.search_input.delete(0,len(self.search_input.get()))
-        # self.select_system_button.configure(state="normal")
-        
 
-# MARK: CheckDownload
-    def CheckDownloadFromPi_2(self):
-        print("checking load from pi")
-        if self.selected_file is None:
-            self.error_info_label.configure(text="*No File Selected", )
-            return
-        scrollable_files = self.scrollable_logger_files
-        if (self.use_local_data):
-            self.selected_file_name = self.scrollable_local_files[self.selected_file].cget("text")
-            print("file selected: " + self.selected_file_name)
-
-            parameter_files = self.selected_file_name + ".params"
-            self.selected_file_name = self.selected_file_name + ".csv"
-            self.create_curve_frame("curve", self.selected_file_name, parameter_files)
-            self.toggle_frame_by_id("curve")
-        else:
-            self.selected_file_name = scrollable_files[self.selected_file].cget("text")
-            print("file selected: " + self.selected_file_name)
-            self.toggle_frame_by_id("loading")
-            App.current.after(200, self.DownloadDataFromPi) # force it to wait 50ms until after button is disabled
-        self.select_system_button.configure(state="normal")
-
-# MARK: DownloadData
-    def DownloadDataFromPi(self):
-        if (not self.use_local_data):
-            try:
-                self.date_data, self.oat_data, self.mat_data, self.motor_data = self.ReadAllData("-g={}.csv".format(self.selected_file_name), 115200)
-                parameters = CustomSerial("-x={}.params".format(self.selected_file_name), 115200)
-                sample_rate = (int(self.date_data[10]) - int(self.date_data[0]))//600
-                print("sample rate: ", sample_rate)
-                if parameters == "ER2":
-                    print("This parameters file does not exist")
-                print("type of parameters", type(parameters))
-                params_file_name = 'Param'
-                with open('/home/eat/Documents/ME470_Economizer/RaspberryPi/ParamFiles/{}.params'.format(self.selected_file_name), 'w', newline='') as param_file:
-                    file_writer = csv.writer(param_file, delimiter=',')
-                    parameters = parameters.split(",")
-                    parameters.append(sample_rate)
-                    file_writer.writerow(parameters)
-            except Exception as e:
-                print("Arduino Connection error: ", e)
-            self.SetScrollableFiles()
-            
-        parameter_files = self.selected_file_name + ".params"
-        self.selected_file_name = self.selected_file_name + ".csv"
-        self.create_curve_frame("curve", self.selected_file_name, parameter_files)
-        self.toggle_frame_by_id("curve")
-        self.progressbar.set(0) # reset loading bar
-        self.percentage_label.configure(text="{:.0f}%".format(0))
-        
     def DestroyTopLevel(self):
         self.toplevel_window.destroy()
         self.search_input.focus() # to prevent keyboard from previous window from popping up randomly. Idk why
