@@ -743,6 +743,7 @@ class App(ctk.CTk):
             ax.tick_params(axis='both', which='major', labelsize=10)
             ax.set_xlim(-30, 110)
             ax.set_ylim(30, 100)
+            ax.legend(markerscale=9)
 
             left = 0.1
             bottom = 0.1
@@ -850,28 +851,27 @@ class App(ctk.CTk):
                     on_check.set(True)
                     off_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2, label="HVAC On")
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2, label="HVAC Off")
             else:
                 if on_check.get() & off_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2, label="HVAC On")
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2, label="HVAC Off")
                 elif on_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2, label="HVAC On")
                 elif off_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2, label="HVAC Off")
                 else:
                     points_check.set(False)
                     on_check.set(False)
                     off_check.set(False)
                     App.current.update()
-
             plot_standardized_settings(ax)
             canvas.draw()
             canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
@@ -880,8 +880,8 @@ class App(ctk.CTk):
 
             # Plot raw_data
             fig, ax = plt.subplots()
-            ax.scatter(oat_on, mat_on, marker='o', color='#3668A0', s=2, alpha=0.4)
-            ax.scatter(oat_off, mat_off, marker='o', color='#367e70', s=2, alpha=0.4)
+            ax.scatter(oat_on, mat_on, marker='o', color='#3668A0', s=2, alpha=0.4, label="HVAC On")
+            ax.scatter(oat_off, mat_off, marker='o', color='#367e70', s=2, alpha=0.4, label="HVAC Off")
 
             draw_ideal_curve(ax, parameters)
             plot_standardized_settings(ax)
