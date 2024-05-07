@@ -13,8 +13,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import sys
 app_file_path = "/home/eat/Documents/ME470_Economizer/RaspberryPi" # TODO: should not be hard coded in.
-sys.path.append('{app_file_path}/numpad') 
-sys.path.append('{app_file_path}/keyboard')
+sys.path.append('{}/numpad'.format(app_file_path)) 
+sys.path.append('{}/keyboard'.format(app_file_path))
 from keyboard import PopupKeyboard
 from numpad import PopupNumpad
 
@@ -320,7 +320,7 @@ class App(ctk.CTk):
             self.current_epoch_time = self.mm_dd_yy_to_epoch(self.month, self.day, self.year, self.hours, self.minutes)
             # store in CSV file
             parameters = [self.min_OAT,self.RAT,self.LL_Lockout,self.HL_Lockout,self.MAT, self.SR]
-            file_store = "{app_file_path}/ParamFiles/" + self.system_name + ".params"
+            file_store = "{}/ParamFiles/".format(app_file_path) + self.system_name + ".params"
             with open(file_store, 'w', newline='') as new_file:
                csv_writer = csv.writer(new_file) # create the new file or start writing to existing file
                csv_writer.writerow(parameters) # Write first row as the user parameters
@@ -367,7 +367,7 @@ class App(ctk.CTk):
         home_label = ctk.CTkLabel(App.frames[frame_id], text="Welcome to EATPi", font=self.home_font)
         home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
     
-        home_icon = ctk.CTkImage(light_image=Image.open('{app_file_path}/home_icon2.png'), dark_image=Image.open('{app_file_path}/home_icon2.png'), size=(50, 50))
+        home_icon = ctk.CTkImage(light_image=Image.open('{}/home_icon2.png'.format(app_file_path)), dark_image=Image.open('{}/home_icon2.png'.format(app_file_path)), size=(50, 50))
         image1 = ctk.CTkLabel(App.frames[frame_id], text="", image=home_icon)
         image1.grid(row=0, column=1, padx=20, pady=20, sticky="e")
     
@@ -531,7 +531,7 @@ class App(ctk.CTk):
                 if parameters == "ER2":
                     print("This parameters file does not exist")
                 params_file_name = 'Param'
-                with open('{app_file_path}/ParamFiles/{}.params'.format(self.selected_file_name), 'w', newline='') as param_file:
+                with open('{}/ParamFiles/{}.params'.format(app_file_path, self.selected_file_name), 'w', newline='') as param_file:
                     file_writer = csv.writer(param_file, delimiter=',')
                     parameters = parameters.split(",")
                     parameters.append(sample_rate)
@@ -592,8 +592,8 @@ class App(ctk.CTk):
 
     def GetAvailableDownloadedFiles(self):
         # gather filenames from the local files
-        param_files = os.listdir("{app_file_path}/ParamFiles/")
-        data_files = os.listdir("{app_file_path}/CSV_Files/")
+        param_files = os.listdir("{}/ParamFiles/".format(app_file_path))
+        data_files = os.listdir("{}/CSV_Files/".format(app_file_path))
 
         # remove .csv and .params from the file names
         for i in range(len(param_files)):
@@ -675,7 +675,7 @@ class App(ctk.CTk):
         def process_data_points(data_file_name):
             #datetime64[s]
             # Process csv file of data points
-            data_file_name = "{app_file_path}/CSV_Files/" + data_file_name
+            data_file_name = "{}/CSV_Files/".format(app_file_path) + data_file_name
             data = np.genfromtxt(data_file_name, delimiter=',', skip_header=0, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
             oat = data['OAT']
@@ -714,7 +714,7 @@ class App(ctk.CTk):
         def process_ideal_curve_parameters(parameters_file_name):
         # Process parameter csv file of ideal curve
             parameters_dictionary = {} # dictionary of length 8
-            parameters_file_name = "{app_file_path}/ParamFiles/" + parameters_file_name
+            parameters_file_name = "{}/ParamFiles/".format(app_file_path) + parameters_file_name
             try:
                 with open(parameters_file_name, 'r') as file:
                     reader = csv.reader(file)
@@ -1155,7 +1155,7 @@ class App(ctk.CTk):
             date_data = []
             motor_data = []
             test_start = time()
-            filename = "{app_file_path}/CSV_Files/{}".format(message[3:]) # remove the -g= from the message to get filename
+            filename = "{}/CSV_Files/{}".format(app_file_path, message[3:]) # remove the -g= from the message to get filename
             with open(filename, 'w', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file, delimiter=',')
                 while (time() - start_time) < 2: # arbitrary time out of 2 seconds. This can likely be decreased to speed it up, but would require some testing
