@@ -762,30 +762,30 @@ class App(ctk.CTk):
             i_mat = parameters["MAT"] #float
 
             # Create ideal economizer curve
-            oat_for_plot = np.arange(-37, 111, 1)
+            oat_for_plot = np.arange(-37, 111, 0.5)
             oat_for_plot1 = []
             oat_for_plot2 = []
             oat_for_plot3 = []
             oat_for_plot4 = []
             MAT_at_min_OA = rat*(1 - (min_oat)) + (min_oat)*oat_for_plot
+            i_mat_OAT_cutoff = (i_mat-(1-min_oat)*rat)/min_oat
             mat_for_plot1 = [] # maybe dont make them zero?
             mat_for_plot2 = [] # maybe dont make them zero?
             mat_for_plot3 = [] # maybe dont make them zero?
             mat_for_plot4 = [] # maybe dont make them zero?
             for i, temp in enumerate(oat_for_plot):
-                if (MAT_at_min_OA[i] < i_mat or temp <= lllt or temp >= hllt):
-                    if(temp >= hllt): #Im sorry michael - kyle
-                        mat_for_plot4.append(MAT_at_min_OA[i])
-                        oat_for_plot4.append(temp)
-                    else:
-                        mat_for_plot1.append(MAT_at_min_OA[i])
-                        oat_for_plot1.append(temp)
-                elif (temp < i_mat):
+                if(temp <= lllt or temp <= i_mat_OAT_cutoff):
+                    mat_for_plot1.append(MAT_at_min_OA[i])
+                    oat_for_plot1.append(temp)
+                elif (temp <= i_mat):
                     mat_for_plot2.append(i_mat)
                     oat_for_plot2.append(temp)
-                else:
+                elif (temp <= rat and temp < hllt):
                     mat_for_plot3.append(oat_for_plot[i])
                     oat_for_plot3.append(temp)
+                else:
+                    mat_for_plot4.append(MAT_at_min_OA[i])
+                    oat_for_plot4.append(temp)
 
             # Plot ideal economizer curve
             ax.plot(oat_for_plot1, mat_for_plot1, color='#fa8b41', linewidth=2) #''
