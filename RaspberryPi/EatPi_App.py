@@ -850,22 +850,22 @@ class App(ctk.CTk):
                     on_check.set(True)
                     off_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
             else:
                 if on_check.get() & off_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
                 elif on_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_on[on_start_index:on_end_index], mat_on[on_start_index:on_end_index], marker='o', color='#3668A0', s=2)
                 elif off_check.get():
                     points_check.set(True)
                     App.current.update()
-                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#3668A0', s=0.1)
+                    ax.scatter(oat_off[off_start_index:off_end_index], mat_off[off_start_index:off_end_index], marker='o', color='#367e70', s=2)
                 else:
                     points_check.set(False)
                     on_check.set(False)
@@ -881,7 +881,7 @@ class App(ctk.CTk):
             # Plot raw_data
             fig, ax = plt.subplots()
             ax.scatter(oat_on, mat_on, marker='o', color='#3668A0', s=2, alpha=0.4)
-            ax.scatter(oat_off, mat_off, marker='o', color='#3668A0', s=2, alpha=0.4)
+            ax.scatter(oat_off, mat_off, marker='o', color='#367e70', s=2, alpha=0.4)
 
             draw_ideal_curve(ax, parameters)
             plot_standardized_settings(ax)
