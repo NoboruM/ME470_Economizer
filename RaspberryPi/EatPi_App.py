@@ -92,7 +92,7 @@ class App(ctk.CTk):
         self.create_loading_frame('loading')
         self.create_end_frame("logging")
         
-        # set the initial frame to display  
+        # Set the initial frame to display  
         App.current = App.frames["home"]
         App.current.pack(in_=self.main_container, side=tkinter.TOP, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
 
@@ -101,11 +101,11 @@ class App(ctk.CTk):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Installation: Set Parameters for New System")
 
-        # can be used in the definition of the CTkEntry widgets to validate numbers as user is typing. Currently not implemented
+        # Can be used in the definition of the CTkEntry widgets to validate numbers as user is typing. Currently not implemented
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
    
         # Sets the weight of the specified grid columns and rows to 1. Weight of 1 means the row/column will resize with the window
-        # default is weight=0
+        # Default is weight=0
         App.frames[frame_id].grid_columnconfigure((1, 2, 3), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
 
@@ -120,7 +120,7 @@ class App(ctk.CTk):
         self.system_name_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
         self.system_name_input.bind("<FocusIn>", self.KeyboardCallback(self.system_name_input, 25, 200))
 
-        # # next section is 4 columns, 9 rows
+        # # Next section is 4 columns, 9 rows
         Label_column_width = 600
         set_inputs_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Inputs:")
         set_inputs_label.grid(row=1, column=0,padx=10, pady=5, sticky="nsew")
@@ -177,7 +177,7 @@ class App(ctk.CTk):
         time_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Set Current Time:", width=Label_column_width)
         time_label.grid(row=7, column=1,padx=10, pady=5, sticky="e")
         
-        # to help with formatting, a separate frame is created here to contain the inputs for the time and the colon
+        # To help with formatting, a separate frame is created here to contain the inputs for the time and the colon
         time_frame = ctk.CTkFrame(App.frames[frame_id], fg_color="#212121")
         time_frame.grid(row=7, column=2, padx = 10, pady=5, sticky="nsew")
         time_frame.grid_rowconfigure(0, weight=1)
@@ -195,7 +195,7 @@ class App(ctk.CTk):
         self.time_input1.bind("<1>", self.NumKeyboardCallback(self.time_input1, 750, 50))
         self.time_input2.bind("<1>", self.NumKeyboardCallback(self.time_input2, 750, 50))
 
-        # a separate frame used for the date. Same reason as for the time
+        # A separate frame used for the date. Same reason as for the time
         date_label = ctk.CTkLabel(App.frames[frame_id], font=self.my_font, text="Date:", width=Label_column_width)
         date_label.grid(row=8, column=1,padx=10, pady=5, sticky="e")
         
@@ -227,10 +227,6 @@ class App(ctk.CTk):
         self.day_input.bind("<1>", self.NumKeyboardCallback(self.day_input, 750, 50))
         self.year_input.bind("<1>", self.NumKeyboardCallback(self.year_input, 750, 50))
         
-
-        # self.view_plot_button = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Ideal Economizer Curve", command=partial(self.handle_parameters_for_curve_view, App.frames[frame_id]), height=35, corner_radius=4)
-        # self.view_plot_button.grid(row=10, column=1, padx=20, pady=20, sticky="ew")
-        
         # Button that calls the CanceInputFrame function when pressed 
         self.cancel_button = ctk.CTkButton(App.frames[frame_id], command=self.CancelInputFrame, font=self.my_font, text="Cancel", height=40, corner_radius=4)
         self.cancel_button.grid(row=9, column=2, padx=20, pady=20, sticky="ew")
@@ -240,7 +236,7 @@ class App(ctk.CTk):
     
     # MARK: CancelInputFrame
     def CancelInputFrame(self):
-        # remove all of the text and numberical inputs 
+        # Remove all of the text and numberical inputs 
         self.system_name_input.delete(0,len(self.system_name_input.get()))
         self.min_OAT_input.delete(0,len(self.min_OAT_input.get()))
         self.RAT_input.delete(0,len(self.RAT_input.get()))
@@ -254,7 +250,7 @@ class App(ctk.CTk):
         self.day_input.delete(0,len(self.day_input.get()))
         self.year_input.delete(0,len(self.year_input.get()))
 
-        # return all of the colors to the original color
+        # Return all of the colors to the original color
         self.system_name_input.configure(fg_color = self.bg)
         self.min_OAT_input.configure(fg_color = self.bg)
         self.RAT_input.configure(fg_color = self.bg)
@@ -274,7 +270,7 @@ class App(ctk.CTk):
 
 # MARK: HandleInstallInputs
     def handle_install_inputs(self):
-        # validate the inputs. Starts by storing in a list so that the validation can occur in a for-loop
+        # Validate the inputs. Starts by storing in a list so that the validation can occur in a for-loop
         self.system_name = self.system_name_input.get()
         numerical_inputs = []
         numerical_inputs.append(self.min_OAT_input)
@@ -292,15 +288,15 @@ class App(ctk.CTk):
         for input in numerical_inputs:
             if input.get() == "":
                 inputs_valid = False
-                input.configure(fg_color= "#754543") # set the color of the input to red
+                input.configure(fg_color= "#754543") # Set the color of the input to red
             else:
-                input.configure(fg_color= self.bg) # necessary to make sure that the color goes back to black after user has corrected
+                input.configure(fg_color= self.bg) # Necessary to make sure that the color goes back to black after user has corrected
         
-        response = CustomSerial("-p?\r\n", 115200) # confirm that the arduino is connected
+        response = CustomSerial("-p?\r\n", 115200) # Confirm that the arduino is connected
         if (response != "AOK"):
             self.install_error_label.configure(text="Logger not connected", text_color="#ff0000")
             return
-        self.install_error_label.configure(text=" ") # clear the error label because arduino is connected
+        self.install_error_label.configure(text=" ") # Clear the error label because arduino is connected
         if inputs_valid:
             self.min_OAT = self.min_OAT_input.get()
             self.RAT = self.RAT_input.get()
@@ -310,24 +306,24 @@ class App(ctk.CTk):
             self.SR = self.SR_input.get()
             self.hours = self.time_input1.get()
             if (self.time_unit_label.get() == "PM"):
-                self.hours = str(int(self.hours) + 12) # convert to 24 hour time
+                self.hours = str(int(self.hours) + 12) # Convert to 24 hour time
             self.minutes = self.time_input2.get()
             self.month = self.month_input.get()
             self.day = self.day_input.get()
             self.year = self.year_input.get()
             
-            # conver to epoch time, as the RTC on the data logger stores data in epoch time. NOTE: this does not account for change in time zones.
+            # Convert to epoch time, as the RTC on the data logger stores data in epoch time. NOTE: this does not account for change in time zones.
             self.current_epoch_time = self.mm_dd_yy_to_epoch(self.month, self.day, self.year, self.hours, self.minutes)
-            # store in CSV file
+            # Store in CSV file
             parameters = [self.min_OAT,self.RAT,self.LL_Lockout,self.HL_Lockout,self.MAT, self.SR]
             file_store = "{}/ParamFiles/".format(app_file_path) + self.system_name + ".params"
             with open(file_store, 'w', newline='') as new_file:
-               csv_writer = csv.writer(new_file) # create the new file or start writing to existing file
+               csv_writer = csv.writer(new_file) # Create the new file or start writing to existing file
                csv_writer.writerow(parameters) # Write first row as the user parameters
             self.toggle_frame_by_id("logging")
-            # make sure this is displayed before creating the other frames
-            sent_check = self.SendInstallationInputs() # send the inputs to the arduino so they can be stored there as well
-            # confirm that data has been sent well. If not display message to user in the install frame
+            # Make sure this is displayed before creating the other frames
+            sent_check = self.SendInstallationInputs() # Send the inputs to the arduino so they can be stored there as well
+            # Confirm that data has been sent well. If not display message to user in the install frame
             if sent_check == -1:
                 self.install_error_label.configure(text="logger connection error")
                 self.toggle_frame_by_id("input")
@@ -335,7 +331,7 @@ class App(ctk.CTk):
 
 # MARK:SendInstallInputs
     def SendInstallationInputs(self):
-        # send the inputs to datalogger
+        # Send the inputs to datalogger
         filename = self.system_name + '.params'
         try:
             response = CustomSerial("-n={}.csv\r\n".format(self.system_name), 115200) # set the recording filename
@@ -355,7 +351,7 @@ class App(ctk.CTk):
             return True
         return False
     
-#MARK: HomeFrame            
+#MARK: Create Home Frame            
     def create_home_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Home")
@@ -363,49 +359,26 @@ class App(ctk.CTk):
         App.frames[frame_id].grid_columnconfigure((0, 1), weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=0, minsize=90)
 
-
+        # Create and place "Welcome to EATPi" label
         home_label = ctk.CTkLabel(App.frames[frame_id], text="Welcome to EATPi", font=self.home_font)
         home_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
-    
+        
+        # Create and place home icon on top right corner
         home_icon = ctk.CTkImage(light_image=Image.open('{}/home_icon2.png'.format(app_file_path)), dark_image=Image.open('{}/home_icon2.png'.format(app_file_path)), size=(50, 50))
         image1 = ctk.CTkLabel(App.frames[frame_id], text="", image=home_icon)
         image1.grid(row=0, column=1, padx=20, pady=20, sticky="e")
-    
+
+        # Create and place Installation button; leads to input screen when pressed
         button1 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Installation: Set Parameters for New System",  command=partial(self.toggle_frame_by_id, "input"))
         button1.grid(row=1, column=0, padx=20, pady=20, sticky="nsw")
-    
+
+        # Create and place View Downlaoded Data button; leads to download screen when pressed
         button2 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="View Downloaded Data", command=partial(self.DetermineDownloadSource, "View Downloaded Data"))
         button2.grid(row=2, column=0, padx=20, pady=20, sticky="nsw")
 
-        button4 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Select Existing System", command=partial(self.DetermineDownloadSource, "View Downloaded Data"))
-        button4.grid(row=4, column=0, padx=60, pady=20, sticky="nsw")
-        button4.grid_forget()
-
-        button5 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Create New System", command=partial(self.toggle_frame_by_id, "input"))
-        button5.grid(row=5, column=0, padx=60, pady=20, sticky="nsw")
-        button5.grid_forget() 
-
-        # button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=lambda: self.show_additional_home_buttons(App.frames[frame_id], button3, button4, button5))
+        # Create and place View Downlaoded Data button; leads to download screen when pressed
         self.button3 = ctk.CTkButton(App.frames[frame_id], font=self.my_font, text="Download Data",  command=partial(self.DetermineDownloadSource, "Download Data"))
         self.button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
-        
-#MARK: ShowExtraHomeBut
-    def show_additional_home_buttons(self, frame, main_button, button1, button2):
-        if getattr(main_button, "additional_buttons_shown", False):
-            main_button.configure(fg_color="#3668A0")
-            # Remove the additional buttons if they are already shown
-            button1.grid_forget()
-            button2.grid_forget()
-            # Update the attribute to indicate that the additional buttons are hidden
-            main_button.additional_buttons_shown = False
-        else:
-            main_button.configure(fg_color="#24476C")
-            # Pack the buttons to display them underneath the main button
-            button1.grid(row=4, column=0, padx=60, pady=20, sticky="nsw")
-            button2.grid(row=5, column=0, padx=60, pady=20, sticky="nsw")
-
-            # Update the attribute to indicate that the additional buttons are shown
-            main_button.additional_buttons_shown = True
 
 #MARK: DownloadFrame
     def create_download_frame(self, frame_id):
@@ -429,7 +402,7 @@ class App(ctk.CTk):
         self.search_input.grid(row=0, column=1, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.search_input.bind("<FocusIn>", self.KeyboardCallback(self.search_input, 25, 200), add='+')
     
-        # create scrollable frame. This will contain all of the available files as buttons. Initially this was so that a function could be called when it is pressed, but the same effect can be done by binding a function to a CTkLabel 
+        # Create scrollable frame. This will contain all of the available files as buttons. Initially this was so that a function could be called when it is pressed, but the same effect can be done by binding a function to a CTkLabel 
         self.scrollable_frame = ctk.CTkScrollableFrame(App.frames[frame_id], height=350)
         self.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(10, 10), pady=0, sticky="nsew")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
@@ -453,7 +426,7 @@ class App(ctk.CTk):
         self.selected_file = None
         self.logger_file_names = self.GetAvailableArduinoFiles()
         self.local_data_file_names, self.local_param_file_names = self.GetAvailableDownloadedFiles()
-        # from the available files, creates the buttons and appends to appropriate lists
+        # From the available files, creates the buttons and appends to appropriate lists
         for i, file in enumerate(self.logger_file_names):
             if (self.scrollable_logger_file_names.count(file) == 0):
                 button = ctk.CTkButton(self.scrollable_frame, text=file, anchor="w", font=self.my_font, fg_color="#39334f", height=50, command=partial(self.FileSelection, file))
@@ -468,7 +441,7 @@ class App(ctk.CTk):
                 self.scrollable_local_files.append(button)
                 self.scrollable_local_file_names.append(file)
         
-        self.InitFilterFiles() # displays the correct files based on self.use_local_data
+        self.InitFilterFiles() # Displays the correct files based on self.use_local_data
     
 # MARK: InitFilterFiles
     def InitFilterFiles(self):
@@ -487,7 +460,7 @@ class App(ctk.CTk):
 
 # MARK: BackFromDownloadFrame
     def BackFromDownloadFrame(self):
-        # clears the error label before switching to home frame
+        # Clears the error label before switching to home frame
         self.error_info_label.configure(text="", )
         self.search_input.delete(0,len(self.search_input.get()))
         self.toggle_frame_by_id("home")
@@ -495,11 +468,9 @@ class App(ctk.CTk):
 # MARK: CheckDownload
     def CheckDownloadFromPi(self):
         self.select_system_button.configure(state="disabled")
-        App.current.after(10, self.CheckDownloadFromPi_2) # force it to wait 1ms to start downloading until after button is disabled. Makes sure button is disabled
+        App.current.after(10, self.CheckDownloadFromPi_2) # Force it to wait 1ms to start downloading until after button is disabled. Makes sure button is disabled
         self.error_info_label.configure(text="", )
-        self.search_input.delete(0,len(self.search_input.get()))
-        # self.select_system_button.configure(state="normal")
-        
+        self.search_input.delete(0,len(self.search_input.get()))        
 # MARK: CheckDownload_2
     def CheckDownloadFromPi_2(self):
         if self.selected_file is None:
@@ -510,14 +481,14 @@ class App(ctk.CTk):
             self.selected_file_name = self.scrollable_local_files[self.selected_file].cget("text")
             parameter_files = self.selected_file_name + ".params"
             self.selected_file_name = self.selected_file_name + ".csv"
-            # create_curve_frame reads from csv files stored locally so just need to provide the file names
+            # Create_curve_frame reads from csv files stored locally so just need to provide the file names
             self.create_curve_frame("curve", self.selected_file_name, parameter_files)
             self.toggle_frame_by_id("curve")
         else:
             self.selected_file_name = scrollable_files[self.selected_file].cget("text")
             self.toggle_frame_by_id("loading")
-            # force the app to wait to make sure the loading frame is displayed before starting to download
-            # otherwise, it will download the data and then display the loading frame
+            # Force the app to wait to make sure the loading frame is displayed before starting to download
+            # Otherwise, it will download the data and then display the loading frame
             App.current.after(200, self.DownloadDataFromArduino) 
         self.select_system_button.configure(state="normal")
 
@@ -554,7 +525,7 @@ class App(ctk.CTk):
 #MARK: FilterFiles
     def FilterFiles(self, *args):
         # self.filter_files is set to false in the FileSelection function (called when a file is tapped on by the user)
-        # prevents all other options from disappearing when the user picks one
+        # Prevents all other options from disappearing when the user picks one
         if (self.filter_files):
             text = self.search_input.get() 
             self.filtered_frame_files = []
@@ -578,12 +549,12 @@ class App(ctk.CTk):
     def GetAvailableArduinoFiles(self):
         files = []
         try:
-            response = CustomSerial("-p?", 115200) # check if there is a connection to arduino 
+            response = CustomSerial("-p?", 115200) # Check if there is a connection to arduino 
             if (response != "AOK"):
                 return files
             files = CustomSerial("-g?", 115200).split(",")  # get the file names
 
-            for i in range(len(files)): # remove the .csv or .params from the file names to be displayed
+            for i in range(len(files)): # Remove the .csv or .params from the file names to be displayed
                 files[i] = files[i].split(".")[0]
             files.sort()
         except serial.SerialException as e:
@@ -591,11 +562,11 @@ class App(ctk.CTk):
         return files
 
     def GetAvailableDownloadedFiles(self):
-        # gather filenames from the local files
+        # Gather filenames from the local files
         param_files = os.listdir("{}/ParamFiles/".format(app_file_path))
         data_files = os.listdir("{}/CSV_Files/".format(app_file_path))
 
-        # remove .csv and .params from the file names
+        # Remove .csv and .params from the file names
         for i in range(len(param_files)):
             param_files[i] = param_files[i].split(".")[0]
         for i in range(len(data_files)):
@@ -604,18 +575,18 @@ class App(ctk.CTk):
         
 #MARK: FileSelection
     def FileSelection(self, file_name):
-        self.filter_files = False # to prevent all other files from disappearing when a file is selected. Used in FilterFiles
-        self.error_info_label.configure(text="", ) # clear error label
+        self.filter_files = False # To prevent all other files from disappearing when a file is selected. Used in FilterFiles
+        self.error_info_label.configure(text="", ) # Clear error label
 
-        # get and delete any input that currently exists and replace with the filename
+        # Get and delete any input that currently exists and replace with the filename
         curr_input = self.search_input.get()
         self.search_input.delete(0,len(curr_input))
         self.search_input.insert(0, file_name)
         scrollable_files = self.scrollable_logger_files
         if (self.use_local_data):
             scrollable_files = self.scrollable_local_files
-        # change the color of the button to be slightly greyed out
-        # reset the colors of all of the other buttons
+        # Change the color of the button to be slightly greyed out
+        # Reset the colors of all of the other buttons
         for i in range(len(scrollable_files)):
             text = scrollable_files[i].cget("text")
             if (text == file_name):
@@ -625,12 +596,12 @@ class App(ctk.CTk):
                 scrollable_files[i].configure(fg_color="#39334f")
 
     def EnableFilter(self, *args):
-        # used in the KeyboardCallback function. Makes sure its set to true when the keyboard is used
+        # Used in the KeyboardCallback function. Makes sure its set to true when the keyboard is used
         self.filter_files = True
 
-    # five string variable parameters, int32 output
+    # Five string variable parameters; outputs an int32 variable
     def mm_dd_yy_to_epoch(self, month, day, year, hour, minute):
-        # prepend zeros to make it match the expected input of the strptime function
+        # Prepend zeros to make it match the expected input of the strptime function
         while (len(minute) < 2):
             minute = "0" + minute
             print("minute: ", minute)
@@ -659,7 +630,9 @@ class App(ctk.CTk):
     
 # MARK: CreateCurveFrame
     def create_curve_frame(self, frame_id, raw_data, curve_parameters):
-        #returns three string variables
+        # Converts from Unix time to MM/DD/YY format
+        # An example of epoch_time is 1620403200
+        # Returns three string variables: month, day, and year
         def epoch_to_mm_dd_yy(epoch_time):
             # Convert epoch time to datetime object
             print("epoch time: ", "'{}'".format(epoch_time))
@@ -671,10 +644,11 @@ class App(ctk.CTk):
             year = str(dt_object.year)[-2:]
 
             return month, day, year
-
+            
+        # Process CSV file of data points
         def process_data_points(data_file_name):
-            #datetime64[s]
-            # Process csv file of data points
+
+            # Extract data and store them into four arrays: date, oat, mat, and motor
             data_file_name = "{}/CSV_Files/".format(app_file_path) + data_file_name
             data = np.genfromtxt(data_file_name, delimiter=',', skip_header=0, dtype=[('Date', np.int32), ('OAT', 'f8'), ('MAT', 'f8'), ('Motor_State', 'i1')])
             date = data['Date']
@@ -682,6 +656,7 @@ class App(ctk.CTk):
             mat = data['MAT']
             motor = data['Motor_State']
 
+            # Create six arrays for data filtering based on ON/OFF motor status
             date_on = []
             date_off = []
             oat_on = []
@@ -693,6 +668,7 @@ class App(ctk.CTk):
             print("motor: ", motor)
             iter_range = motor.size
 
+            # Traverse through each element to filter the data points based on ON/OFF status
             motor.reshape((motor.size))
             date.reshape((date.size))
             oat.reshape((oat.size))
@@ -707,13 +683,16 @@ class App(ctk.CTk):
                     oat_off.append(oat[i])
                     mat_off.append(mat[i])
 
+            # Convert the date of the first and last data points to Unix time for data filtering based on date range
             start_month, start_date, start_year = epoch_to_mm_dd_yy(date[0])
             end_month, end_date, end_year = epoch_to_mm_dd_yy(date[len(date) - 1])
             return start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off
+            
 # MARK: ProcessIdealParams
+        # Process parameter CSV file of ideal curve
+        # Throws error message if values are invalid or file does not exist
         def process_ideal_curve_parameters(parameters_file_name):
-        # Process parameter csv file of ideal curve
-            parameters_dictionary = {} # dictionary of length 8
+            parameters_dictionary = {} # Dictionary of length 8
             parameters_file_name = "{}/ParamFiles/".format(app_file_path) + parameters_file_name
             try:
                 with open(parameters_file_name, 'r') as file:
@@ -735,6 +714,8 @@ class App(ctk.CTk):
             return parameters_dictionary
 
 #MARK: PlotStandardized Settings
+        # Standardized labels, positions, and dimensions
+        # Called at every replotting of the graphs to ensure constant design
         def plot_standardized_settings(ax):
             # Label and Tweak Plot Design
             ax.set_title(raw_data[:-4], fontsize=13)
@@ -750,30 +731,33 @@ class App(ctk.CTk):
             width = 0.8
             height = 0.8
             ax.set_position([left, bottom, width, height])
+            
 # MARK: DrawIdealCurve
+        # Plot ideal curve on the given plot ax
         def draw_ideal_curve(ax, parameters):
-            # Process parameters for ideal economizer curve
             min_oat = parameters["M%OAT"] #float
 
+            # Ensure that the percentage is in the 0<min_oat<1 range
             if (min_oat >1):
                 min_oat /= 100
+            # Extract the parameters from the input "parameters" into local varibales 
             rat = parameters["RAT"] #float
             lllt = parameters["LLLT"] #float
             hllt = parameters["HLLT"] #float
             i_mat = parameters["MAT"] #float
 
-            # Create ideal economizer curve
+            # Create ideal economizer curve from the parameters
             oat_for_plot = np.arange(-37, 111, 0.5)
-            oat_for_plot1 = []
-            oat_for_plot2 = []
-            oat_for_plot3 = []
-            oat_for_plot4 = []
+            oat_for_plot1 = [] # Region 1
+            oat_for_plot2 = [] # Region 2
+            oat_for_plot3 = [] # Region 3
+            oat_for_plot4 = [] # Region 4
             MAT_at_min_OA = rat*(1 - (min_oat)) + (min_oat)*oat_for_plot
             i_mat_OAT_cutoff = (i_mat-(1-min_oat)*rat)/min_oat
-            mat_for_plot1 = [] # maybe dont make them zero?
-            mat_for_plot2 = [] # maybe dont make them zero?
-            mat_for_plot3 = [] # maybe dont make them zero?
-            mat_for_plot4 = [] # maybe dont make them zero?
+            mat_for_plot1 = []
+            mat_for_plot2 = []
+            mat_for_plot3 = []
+            mat_for_plot4 = []
             for i, temp in enumerate(oat_for_plot):
                 if(temp <= lllt or temp <= i_mat_OAT_cutoff):
                     mat_for_plot1.append(MAT_at_min_OA[i])
@@ -796,50 +780,67 @@ class App(ctk.CTk):
 
 # MARK: Handle Date Range
         # ASSUMES THE RAW DATA FILE IS IN TIME ORDER
+        # Called when the "Submit" button under the date ranges is pressed 
+        # TODO: Didn't work as expected; Might be fixed but need to be further tested
         def handle_date_range(m1, d1, y1, m2, d2, y2, parameters):
+            # If all of the entries are blank, show all the data points
             if (m1 == '') & (d1 == '') & (y1 == '') & (m2 == '') & (d2 == '') & (y2 == ''):
                 on_start_index = 0
                 off_start_index = 0
                 on_end_index = len(date_on) - 1
                 off_end_index = len(date_off) - 1
                 handle_plot("", oat_on, oat_off, mat_on, mat_off, parameters)
-                return #on_start_index, off_start_index, on_end_index, off_end_index
+                return
 
-            # if any of the entries are empty, make entries red
+            # If any of the entries are empty, make entries red
             if (m1 == '') | (d1 == '') | (y1 == '') | (m2 == '') | (d2 == '') | (y2 == ''):
-                #make buttons red
+                # TODO: Make buttons red
                 print("Please fill in all the entries")
-                return #on_start_index, off_start_index, on_end_index, off_end_index
+                return
 
+            #Convert MM/DD/YY to Unix time for convenient comparison
             epoch1 = self.mm_dd_yy_to_epoch(m1, d1, y1, 0, 0) #string
             epoch2 = self.mm_dd_yy_to_epoch(m2, d2, y2, 0, 0) #string
-
+            
+            # If first date is later than the second date, turn buttons red
             if epoch1 > epoch2:
-                # turn buttons red
+                # TODO: Make buttons red
                 print("First date should be earlier than second date")
                 return
 
+            # The error is most likely in these for loops
+            # Indexes are local variables of the create_curve_frame function
+            # Traverse date_on to find the first date within the date range
             for i in range(len(date_on)):
                 if date_on[i] >= epoch1:
                     on_start_index = i
                 break
+            # Traverse date_off to find the first date within the date range
             for i in range(len(date_off)):
                 if date_off[i] >= epoch1:
                     off_start_index = i
                 break
+            # Traverse date_on from the back to find the last date within the date range
             for i in range(len(date_on)-1, -1, -1):
                 if date_on[i] <= epoch2:
                     on_end_index = i
                 break
+            # Traverse date_off from the back to find the last date within the date range
             for i in range(len(date_off)-1, -1, -1):
                 if date_off[i] <= epoch2:
                     off_end_index = i
                 break
+            
+            # Replot the plot; indices are taken into account in handle_plot
             handle_plot("", oat_on, oat_off, mat_on, mat_off, parameters)
 
 # MARK:HandlePlot
+        # Regraphs the plot according to the status of the checkboxes and the date range
+        # Called everytime a check is pressed or a date range is submitted
         def handle_plot(called_from, oat_on, oat_off, mat_on, mat_off, parameters):
+            # Deletes current plot
             ax.clear()
+            # Checks all checkboxes to determine what parts of curve and data points to plot
             if curve_check.get():
                 draw_ideal_curve(ax, parameters)
             if called_from == "points":
@@ -876,13 +877,15 @@ class App(ctk.CTk):
             canvas.draw()
             canvas.get_tk_widget().pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
 #MARK: PlotMatplotlib
+        # Creates the inital plot; all checkboxes are ticked and the date range is set to the first and last date by default
         def plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters):
 
-            # Plot raw_data
+            # Plot scatterplot raw_data
             fig, ax = plt.subplots()
             ax.scatter(oat_on, mat_on, marker='o', color='#3668A0', s=2, alpha=0.4, label="HVAC On")
             ax.scatter(oat_off, mat_off, marker='o', color='#367e70', s=2, alpha=0.4, label="HVAC Off")
 
+            # Plot ideal economizer curve
             draw_ideal_curve(ax, parameters)
             plot_standardized_settings(ax)
             fig.set_size_inches(6, 5)
@@ -892,9 +895,12 @@ class App(ctk.CTk):
 
             return canvas, fig, ax
 
+        # Body of the create_curve_frame function
+        # Extract the arrays from data points CSV file and parameters CSV file
         start_month, start_date, start_year, end_month, end_date, end_year, date_on, date_off, oat_on, oat_off, mat_on, mat_off = process_data_points(raw_data)
         parameters_array = process_ideal_curve_parameters(curve_parameters)
 
+        # Initialize indices for date range
         on_start_index = 0
         off_start_index = 0
         on_end_index = len(date_on) - 1
@@ -903,8 +909,10 @@ class App(ctk.CTk):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Ideal Economizer Curve and Data Points")
 
+        # For making sure date range inputs are valid
         num_val = (App.frames[frame_id].register(self.Num_Validation), '%P')
 
+        # For more control over the layout of the frame
         input_column_width = 350
 
         # Create subframes for plot and widgets
@@ -914,40 +922,43 @@ class App(ctk.CTk):
         widgets_frame = ctk.CTkFrame(App.frames[frame_id], width=input_column_width)
         widgets_frame.pack(side=ctk.RIGHT, padx=10, pady=10, fill=ctk.BOTH)
 
-        # Plot using matplotlib, moved down so it could consider toggles
+        # Plot using matplotlib
         canvas, fig, ax = plot_matplotlib(oat_on, oat_off, mat_on, mat_off, parameters_array)
 
-        curve_check = ctk.BooleanVar()
-        curve_check.set(True)
-        points_check = ctk.BooleanVar()
-        points_check.set(True)
-        on_check = ctk.BooleanVar()
-        on_check.set(True)
-        off_check = ctk.BooleanVar()
-        off_check.set(True)
+        # Create and check all checkboxes by default
         checkbox_dim = 30
+        
+        ideal_curve_check = ctk.BooleanVar()
+        ideal_curve_check.set(True)
         ideal_curve_toggle = ctk.CTkCheckBox(widgets_frame, text="Ideal Curve", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=curve_check, command=partial(handle_plot, "curve", oat_on, oat_off, mat_on, mat_off, parameters_array))
         ideal_curve_toggle.grid(row=1, column=0, sticky='w', pady=5)
 
+        points_check = ctk.BooleanVar()
+        points_check.set(True)
         data_points_toggle = ctk.CTkCheckBox(widgets_frame, text="Data Points", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=points_check, command=partial(handle_plot, "points", oat_on, oat_off, mat_on, mat_off, parameters_array))
         data_points_toggle.grid(row=2, column=0, sticky='w', pady=5)
 
+        on_check = ctk.BooleanVar()
+        on_check.set(True)
         motor_on_toggle = ctk.CTkCheckBox(widgets_frame, text="HVAC On", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=on_check, command=partial(handle_plot, "on", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_on_toggle.grid(row=3, column=0, sticky='w', padx=30, pady=5)
 
+        off_check = ctk.BooleanVar()
+        off_check.set(True)
         motor_off_toggle = ctk.CTkCheckBox(widgets_frame, text="HVAC Off", font=self.my_font, checkbox_width=checkbox_dim, checkbox_height=checkbox_dim, variable=off_check, command=partial(handle_plot, "off", oat_on, oat_off, mat_on, mat_off, parameters_array))
         motor_off_toggle.grid(row=4, column=0, sticky='w', padx=30, pady=5)
 
+        # Create date range
         date_range_label = ctk.CTkLabel(widgets_frame, text="Date Range:", font=self.my_font)
         date_range_label.grid(row=5, column=0, sticky='w', pady=5)
 
+        # Create frame to house label entry boxes to better lay out the widgets
         date_range_frame =ctk.CTkFrame(widgets_frame, width=input_column_width, bg_color=widgets_frame.cget("bg_color"), fg_color=widgets_frame.cget("fg_color"))
         date_range_frame.grid_columnconfigure((0, 2, 4), weight=1)
         date_range_frame.grid(row=6, column=0, sticky='ew', pady=5)
 
-
-
-
+        # Create and bind date entries to the keyboard and user inputs
+        # Set placeholders as the minimum and maximum date ranges
         placeholder_width = 2
         input_width = (input_column_width - placeholder_width) // 10
 
@@ -983,89 +994,25 @@ class App(ctk.CTk):
         self.year2_entry.grid(row=2, column=4, sticky='nsew', pady=5)
         self.year2_entry.bind("<Button-1>", self.NumKeyboardCallback(self.year2_entry, 600, 200))
 
+        # Call handle_date_range when Submit is pressed
         submit_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Submit", corner_radius=4, width=1, height=40, command=lambda: handle_date_range(self.month1_entry.get(), self.date1_entry.get(), self.year1_entry.get(), 
                     self.month2_entry.get(), self.date2_entry.get(), self.year2_entry.get(), parameters_array)) 
         submit_button.grid(row=7, column=0, sticky='ew', padx=4, pady=5)
 
+        # Display the sampling rate
         sampling_rate_label = ctk.CTkLabel(widgets_frame, text=f"Sample Rate: {parameters_array['Sampling Rate']} min", font=self.my_font)
         sampling_rate_label.grid(row=8, column=0, sticky='w', pady=5)
 
         return_home_button = ctk.CTkButton(widgets_frame, font=self.my_font, text="Return Home", height=40, corner_radius=4, command=partial(self.toggle_frame_by_id, "home"))
         return_home_button.grid(row=9, column=0, columnspan= 5, sticky='sew', padx=4, pady=5)
 
-# MARK: HandleCurveParams
-    def handle_parameters_for_curve_view(self, frame):
-        self.system_name = self.system_name_input.get()
-        numerical_inputs = []
-        numerical_inputs.append(self.min_OAT_input)
-        numerical_inputs.append(self.RAT_input)
-        numerical_inputs.append(self.LL_Lockout_input)
-        numerical_inputs.append(self.HL_Lockout_input)
-        numerical_inputs.append(self.MAT_input)
-        numerical_inputs.append(self.SR_input)
-        numerical_inputs.append(self.time_input1)
-        numerical_inputs.append(self.time_input2)
-        numerical_inputs.append(self.month_input)
-        numerical_inputs.append(self.day_input)
-        numerical_inputs.append(self.year_input)
-        inputs_valid = True
-        for input in numerical_inputs:
-            if input.get() == "":
-                print("input is blank")
-                inputs_valid = False
-                input.configure(fg_color= "#754543")
-            else:
-                input.configure(fg_color= self.bg)
-        inputs_valid = True
-        if inputs_valid:
-            # clear all inputs?
-            self.min_OAT = float(numerical_inputs[0].get())
-            self.RAT = float(numerical_inputs[1].get())
-            self.LL_Lockout = float(numerical_inputs[2].get())
-            self.HL_Lockout = float(numerical_inputs[3].get())
-            self.MAT = float(numerical_inputs[4].get())
-            self.SR = float(numerical_inputs[5].get())
-
-        if (inputs_valid):
-            # Create arrays for plotting
-            oat = np.arange(-37, 111, 1)
-            MAT_at_min_OA = self.RAT*(1 - (self.min_OAT/100)) + self.min_OAT*oat
-            MAT = np.zeros((len(oat), 1))
-            for i, temp in enumerate(oat):
-                if (MAT_at_min_OA[i] < self.MAT or temp <= self.LL_Lockout or temp >= self.HL_Lockout):
-                    MAT[i] = MAT_at_min_OA[i]
-                elif (temp < self.MAT):
-                    MAT[i] = self.MAT
-                else:
-                    MAT[i] = oat[i]
-
-            # Create a new Tkinter window
-            popup_window = ctk.CTkToplevel(frame)
-            popup_window.title("Pop-up Window")
-            
-            # Create a frame inside the pop-up window
-            popup_frame = ctk.CTkFrame(popup_window)
-            popup_frame.pack(fill=ctk.BOTH, expand=True)
-            
-            # Example plot using matplotlib
-            fig, ax = plt.subplots()
-            ax.plot(oat, MAT)
-            ax.set_xlabel('Outside Air Temperature [°F]')
-            ax.set_ylabel('Mixed Air Temperature [°F]')
-            ax.set_title('Ideal Econimzer Curve for ' + self.system_name)
-            ax.set_xlim(-30, 110)
-            ax.set_ylim(30, 100)
-            
-            # Embed the matplotlib plot in the frame
-            canvas = FigureCanvasTkAgg(fig, master=popup_frame)
-            canvas.draw()
-            canvas.get_tk_widget().pack()
-
+    # Displays standard keyboardwhen entry clicked
     def KeyboardCallback(self, event, x_loc, y_loc):
         self.keyboard = PopupKeyboard(event, x=x_loc, y=y_loc, keyheight=3, keywidth=6)
         self.keyboard.bind('<Map>', self.EnableFilter)
         self.keyboard.disable = False
-
+        
+    # Displays number keyboard when entry is clicked
     def NumKeyboardCallback(self, event, x_loc, y_loc):
         self.numkeyboard= PopupNumpad(event, x=x_loc, y=y_loc, keyheight=60, keywidth=60)
         self.numkeyboard.disable = False
@@ -1076,15 +1023,18 @@ class App(ctk.CTk):
         self.title("Loading")
         print("creating loading frame")
     
-        # configure the grid, but doesn't set size. I think if you keep adding stuff it works
+        # Configure the grid, but doesn't set size. I think if you keep adding stuff it works
         App.frames[frame_id].grid_columnconfigure(0, weight=1)
         App.frames[frame_id].grid_rowconfigure((0, 1), weight=1)
         text_frame = ctk.CTkFrame(App.frames[frame_id], width=600, height=200, fg_color="#212121")
         text_frame.grid(row=1, column=0, sticky="n")
         text_frame.grid_rowconfigure(0, weight=1)
 
+        # Create and place "Loading" label
         loading_label = ctk.CTkLabel(App.frames[frame_id], font=self.home_font, text="Downloading")
         loading_label.grid(row=0, column=0, padx=20, pady=0, sticky="nsew")
+
+        # Create and update loading bar based on the progress of the download
         self.progressbar = ctk.CTkProgressBar(text_frame, height=30, width=300, corner_radius=4)
         self.progressbar.grid(row=1, column=0, pady=0, sticky="n")
         self.progressbar.set(0)
@@ -1092,6 +1042,7 @@ class App(ctk.CTk):
         self.percentage_label.grid(row=2, column=0, pady=0, sticky="n")
         
 # MARK: End_Frame
+    # Notifies user that data loggin has begun and that it is safe to unplug RPi from Arduino
     def create_end_frame(self, frame_id):
         App.frames[frame_id] = ctk.CTkFrame(self, corner_radius=8, fg_color="#212121")
         self.title("Home")
@@ -1108,14 +1059,16 @@ class App(ctk.CTk):
         button3.grid(row=3, column=0, padx=20, pady=20, sticky="nsw")
 
 #MARK: DetermineDownloadSource
+    # Called when "View Downloaded Data" and "Download Data" are clicked
+    # Determines whethe to use local, exisiting data or to download data from the Arduino
+    # Leads to Download screen either way
     def DetermineDownloadSource(self, button_pressed):
-        # Sets the value of use_local_data
         if button_pressed == "View Downloaded Data":
             self.use_local_data = True
         elif button_pressed == "Download Data":
             self.use_local_data = False
             # Assumes that f there are no files from the arduino then download. This would not catch the case where someone has connected
-            # to the arduino and created a new system. The new system would not appear unless the arduino was disconnected and connected again
+            # To the arduino and created a new system. The new system would not appear unless the arduino was disconnected and connected again
             if (len(self.logger_file_names) == 0):
                 self.button3.configure(state="disabled") # Small feedback to let the user know that the button has been pressed. Prevents user from pressing multiple times
                 App.current.update()
@@ -1140,12 +1093,12 @@ class App(ctk.CTk):
         The function reads all of the data from a file. Message should be "-g=filename.csv"
         '''
         try:
-            ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2) # decreaseing the timeout may also decrease the runtime. 2 seconds is arbitrary for now
-            # read the total number of bytes of the file to be used in the downloading bar. One character is one byte, so this give a good approximation of the progress
+            ser = serial.Serial('/dev/ttyACM0', baud_rate, timeout=2) # Decreaseing the timeout may also decrease the runtime. 2 seconds is arbitrary for now
+            # Read the total number of bytes of the file to be used in the downloading bar. One character is one byte, so this give a good approximation of the progress
             filesize = CustomSerial(message, baud_rate) 
-            header = ser.readline().decode().strip() # skip the header
+            header = ser.readline().decode().strip() # Skip the header
             total_bytes = int(filesize.split("=")[1])
-            tenth_of_total_bytes = total_bytes//10 # threshold of when to increment the downloading bar
+            tenth_of_total_bytes = total_bytes//10 # Threshold of when to increment the downloading bar
             increment = 0
             num_bytes_received = 0
             start_time = time()
@@ -1155,18 +1108,18 @@ class App(ctk.CTk):
             date_data = []
             motor_data = []
             test_start = time()
-            filename = "{}/CSV_Files/{}".format(app_file_path, message[3:]) # remove the -g= from the message to get filename
+            filename = "{}/CSV_Files/{}".format(app_file_path, message[3:]) # Remove the -g= from the message to get filename
             with open(filename, 'w', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file, delimiter=',')
-                while (time() - start_time) < 2: # arbitrary time out of 2 seconds. This can likely be decreased to speed it up, but would require some testing
+                while (time() - start_time) < 2: # Arbitrary time out of 2 seconds. This can likely be decreased to speed it up, but would require some testing
                     response = ser.readline().decode().strip()
                     if (response == "" or len(response.split(',')) < 4): 
                         continue
                     num_bytes_received += len(response)
                     date, OAT, MAT, Motor_state = response.split(',')
-                    # write data to CSV
+                    # Write data to CSV
                     csv_writer.writerow([date, OAT, MAT, Motor_state])
-                    if (num_bytes_received >= tenth_of_total_bytes*increment): # calculate the increment and update the loading bar and the percentage label
+                    if (num_bytes_received >= tenth_of_total_bytes*increment): # Calculate the increment and update the loading bar and the percentage label
                         progress = float(num_bytes_received)/float(total_bytes)
                         self.progressbar.set(progress)
                         self.percentage_label.configure(text="{:.0f}%".format(progress*100))
@@ -1179,9 +1132,9 @@ class App(ctk.CTk):
                         motor_data.append(bool(Motor_state))
                     except Exception as e:
                         print('appending the data to the list caused: ', e)
-                    start_time = time() # restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
+                    start_time = time() # Restart so we wait a maximum of 6 seconds for each data point. If it's longer, assume that the data transfer is done
             ser.close()
-            self.progressbar.set(0.99) # set to 0.99 instead of 100 since there is some delay after the download is complete. Delay is caused by creating the curve frame
+            self.progressbar.set(0.99) # Set to 0.99 instead of 100 since there is some delay after the download is complete. Delay is caused by creating the curve frame
             self.percentage_label.configure(text="{:.0f}%".format(99))
             App.current.update()
         except Exception as e:
@@ -1196,7 +1149,7 @@ class App(ctk.CTk):
         # Function used to switch the frame being displayed. frame_id is a string
         if App.frames[frame_id] is not None:
             if App.current is App.frames[frame_id]:
-                App.current.pack_forget() # hides the current frame but does not destroy it
+                App.current.pack_forget() # Hides the current frame but does not destroy it
                 App.current = None
             elif App.current is not None:
                 App.current.pack_forget()
